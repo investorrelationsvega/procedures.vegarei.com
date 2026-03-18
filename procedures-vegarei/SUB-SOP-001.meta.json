@@ -1,0 +1,20 @@
+{
+  "id": "SUB-SOP-001",
+  "currentVersion": "1.1",
+  "revisions": [
+    {
+      "version": "1.1",
+      "date": "2026-03-11",
+      "author": "J Jones",
+      "summary": "Quarterly review cadence added; Drive links corrected; Alex Metskas removed from contacts",
+      "htmlSnapshot": ""
+    },
+    {
+      "version": "1.0",
+      "date": "2026-03-11",
+      "author": "J Jones",
+      "summary": "Initial publication. Full subscription portal flow documented for all investor types.",
+      "htmlSnapshot": ""
+    }
+  ]
+}

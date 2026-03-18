@@ -1,0 +1,78 @@
+import { useState } from 'react'
+
+export default function HistoryPanel({ meta, onClose, onRestore }) {
+  const [preview, setPreview] = useState(null)
+
+  const revisions = meta?.revisions ? [...meta.revisions].reverse() : []
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      {/* Backdrop */}
+      <div className="flex-1 bg-black/20" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="w-[480px] bg-white border-l border-black flex flex-col h-full shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <span className="font-mono text-xs font-bold tracking-widest uppercase text-[#27474D]">
+            Version History
+          </span>
+          <button onClick={onClose} className="text-gray-400 hover:text-black text-xl leading-none">
+            ×
+          </button>
+        </div>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto">
+          {revisions.length === 0 && (
+            <p className="text-sm text-gray-400 font-mono p-6">No revision history yet.</p>
+          )}
+          {revisions.map((rev, i) => (
+            <div
+              key={i}
+              className={`border-b border-gray-100 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                preview === i ? 'bg-[#FDF6E5]' : ''
+              }`}
+              onClick={() => setPreview(preview === i ? null : i)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-xs font-bold text-black">v{rev.version}</span>
+                    {i === 0 && (
+                      <span className="font-mono text-[9px] bg-black text-white px-1.5 py-0.5 tracking-wider uppercase">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-[#566F69] mb-1">{rev.summary}</p>
+                  <p className="font-mono text-[10px] text-[#797469]">
+                    {rev.date} · {rev.author}
+                  </p>
+                </div>
+                {i > 0 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRestore(rev) }}
+                    className="text-[10px] font-mono border border-black px-2 py-1 hover:bg-black hover:text-white transition-colors whitespace-nowrap mt-1"
+                  >
+                    Restore
+                  </button>
+                )}
+              </div>
+
+              {/* Inline preview */}
+              {preview === i && rev.htmlSnapshot && (
+                <div className="mt-4 border border-gray-200 bg-white p-4 max-h-64 overflow-y-auto">
+                  <div
+                    className="sop-document text-xs"
+                    dangerouslySetInnerHTML={{ __html: rev.htmlSnapshot }}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
