@@ -11,29 +11,47 @@ const COMPANIES = [
   { slug: 'valuations',            label: 'Valuations' },
 ]
 
-// Positions matching the vegarei.com star layout (viewBox 1200x720)
+// Wider viewBox (1400x780) with more padding so labels don't clip
 const NODES = [
-  { x: 130,  y: 195, align: 'end',    dx: -16, dy: 5 },
-  { x: 370,  y: 115, align: 'middle', dx: 0,   dy: -16 },
-  { x: 830,  y: 115, align: 'middle', dx: 0,   dy: -16 },
-  { x: 1070, y: 195, align: 'start',  dx: 16,  dy: 5 },
-  { x: 110,  y: 520, align: 'end',    dx: -16, dy: 5 },
-  { x: 370,  y: 630, align: 'middle', dx: 0,   dy: 22 },
-  { x: 830,  y: 630, align: 'middle', dx: 0,   dy: 22 },
-  { x: 1090, y: 520, align: 'start',  dx: 16,  dy: 5 },
+  { x: 200,  y: 220, align: 'end',    dx: -16, dy: 5 },    // Assisted Living
+  { x: 450,  y: 120, align: 'middle', dx: 0,   dy: -16 },  // Builders
+  { x: 950,  y: 120, align: 'middle', dx: 0,   dy: -16 },  // Capital Markets
+  { x: 1200, y: 220, align: 'start',  dx: 16,  dy: 5 },    // Development
+  { x: 180,  y: 560, align: 'end',    dx: -16, dy: 5 },    // Private Equity
+  { x: 450,  y: 670, align: 'middle', dx: 0,   dy: 22 },   // Property Management
+  { x: 950,  y: 670, align: 'middle', dx: 0,   dy: 22 },   // Real Estate Brokerage
+  { x: 1220, y: 560, align: 'start',  dx: 16,  dy: 5 },    // Valuations
 ]
 
-const CX = 600
-const CY = 340
+const CX = 700
+const CY = 380
+
+// V icon with 4-pointed star, traced from the Vega brand mark
+function VegaIcon({ x, y, scale = 0.45 }) {
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale}) translate(-80, -110)`}>
+      {/* 4-pointed star */}
+      <path
+        d="M80 0 Q90 30 94 42 Q90 54 80 72 Q70 54 66 42 Q70 30 80 0Z"
+        fill="#3D3D3D"
+      />
+      {/* V shape */}
+      <path
+        d="M8 48 L66 48 Q70 54 76 64 L80 72 Q84 64 90 54 Q94 48 94 48 L152 48 L88 210 Q84 218 80 218 Q76 218 72 210 Z"
+        fill="#3D3D3D"
+      />
+    </g>
+  )
+}
 
 export default function ConstellationMap() {
   const navigate = useNavigate()
 
   return (
     <svg
-      viewBox="0 0 1200 720"
+      viewBox="0 0 1400 780"
       className="w-full h-auto"
-      style={{ maxWidth: 1200, minHeight: 480 }}
+      style={{ maxWidth: 1400, minHeight: 500 }}
     >
       {/* Lines from center to each node */}
       {NODES.map((n, i) => (
@@ -44,13 +62,8 @@ export default function ConstellationMap() {
         />
       ))}
 
-      {/* Center V logo */}
-      <g transform={`translate(${CX}, ${CY})`}>
-        <polygon points="0,-52 14,-34 0,-16 -14,-34" fill="#000000" />
-        <polygon points="-42,-28 -20,-28 0,38 -22,38" fill="#555555" opacity="0.7" />
-        <polygon points="42,-28 20,-28 0,38 22,38" fill="#555555" opacity="0.55" />
-        <polygon points="-10,-10 10,-10 0,38" fill="#999999" opacity="0.3" />
-      </g>
+      {/* Center V icon */}
+      <VegaIcon x={CX} y={CY} scale={0.5} />
 
       {/* Company nodes */}
       {COMPANIES.map((co, i) => {
@@ -65,16 +78,16 @@ export default function ConstellationMap() {
             onKeyDown={e => e.key === 'Enter' && navigate(`/${co.slug}`)}
           >
             <circle cx={n.x} cy={n.y} r="50" fill="transparent" />
-            <circle cx={n.x} cy={n.y} r="5" fill="none" stroke="#999999" strokeWidth="1" />
-            <circle cx={n.x} cy={n.y} r="3" fill="#999999" />
+            <circle cx={n.x} cy={n.y} r="5" fill="none" stroke="#999" strokeWidth="1" />
+            <circle cx={n.x} cy={n.y} r="3" fill="#999" />
             <text
               x={n.x + n.dx} y={n.y + n.dy}
               textAnchor={n.align}
               style={{
                 fontFamily: "'Space Mono', monospace",
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 400,
-                fill: '#333333',
+                fill: '#3D3D3D',
                 textTransform: 'uppercase',
                 letterSpacing: '0.14em',
               }}
