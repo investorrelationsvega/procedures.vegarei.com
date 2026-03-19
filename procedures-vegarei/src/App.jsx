@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './lib/auth'
 import Nav from './components/Nav'
 import Home from './pages/Home'
+import CompanySops from './pages/CompanySops'
 import SopView from './pages/SopView'
 import './styles/global.css'
 
@@ -17,8 +18,9 @@ export default function App() {
             <Nav />
             <main className="flex-1">
               <Routes>
-                <Route path="/"        element={<Home />} />
-                <Route path="/sop/:id" element={<SopView />} />
+                <Route path="/"           element={<Home />} />
+                <Route path="/sop/:id"    element={<SopView />} />
+                <Route path="/:company"   element={<CompanySops />} />
               </Routes>
             </main>
           </div>
