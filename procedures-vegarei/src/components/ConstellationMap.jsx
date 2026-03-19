@@ -40,16 +40,16 @@ export default function ConstellationMap() {
         <line
           key={`l-${i}`}
           x1={CX} y1={CY} x2={n.x} y2={n.y}
-          stroke="#C5C0B4" strokeWidth="0.75"
+          stroke="#d4d4d4" strokeWidth="0.75"
         />
       ))}
 
       {/* Center V logo */}
       <g transform={`translate(${CX}, ${CY})`}>
-        <polygon points="0,-52 14,-34 0,-16 -14,-34" fill="#3F4B2A" />
-        <polygon points="-42,-28 -20,-28 0,38 -22,38" fill="#9A9684" opacity="0.7" />
-        <polygon points="42,-28 20,-28 0,38 22,38" fill="#9A9684" opacity="0.55" />
-        <polygon points="-10,-10 10,-10 0,38" fill="#B0AC9E" opacity="0.3" />
+        <polygon points="0,-52 14,-34 0,-16 -14,-34" fill="#000000" />
+        <polygon points="-42,-28 -20,-28 0,38 -22,38" fill="#555555" opacity="0.7" />
+        <polygon points="42,-28 20,-28 0,38 22,38" fill="#555555" opacity="0.55" />
+        <polygon points="-10,-10 10,-10 0,38" fill="#999999" opacity="0.3" />
       </g>
 
       {/* Company nodes */}
@@ -65,8 +65,8 @@ export default function ConstellationMap() {
             onKeyDown={e => e.key === 'Enter' && navigate(`/${co.slug}`)}
           >
             <circle cx={n.x} cy={n.y} r="50" fill="transparent" />
-            <circle cx={n.x} cy={n.y} r="5" fill="none" stroke="#A8A295" strokeWidth="1" />
-            <circle cx={n.x} cy={n.y} r="3" fill="#A8A295" />
+            <circle cx={n.x} cy={n.y} r="5" fill="none" stroke="#999999" strokeWidth="1" />
+            <circle cx={n.x} cy={n.y} r="3" fill="#999999" />
             <text
               x={n.x + n.dx} y={n.y + n.dy}
               textAnchor={n.align}
@@ -74,7 +74,7 @@ export default function ConstellationMap() {
                 fontFamily: "'Space Mono', monospace",
                 fontSize: 11,
                 fontWeight: 400,
-                fill: '#6B6860',
+                fill: '#333333',
                 textTransform: 'uppercase',
                 letterSpacing: '0.14em',
               }}
