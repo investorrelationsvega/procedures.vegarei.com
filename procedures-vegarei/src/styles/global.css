@@ -155,6 +155,21 @@
 }
 .animate-pulse { animation: pulse 2s ease-in-out infinite; }
 
+/* Vega star glow for review notifications */
+@keyframes star-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(245, 197, 66, 0.4));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(245, 197, 66, 0.8)) drop-shadow(0 0 16px rgba(245, 197, 66, 0.3));
+    transform: scale(1.1);
+  }
+}
+.vega-star-glow {
+  animation: star-glow 2.5s ease-in-out infinite;
+}
+
 /* ── Print Styles ────────────────────────────────────────── */
 @media print {
   nav, .sticky, button, .grid-bg, footer { display: none !important; }

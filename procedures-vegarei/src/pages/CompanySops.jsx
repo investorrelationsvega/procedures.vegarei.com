@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex } from '../lib/drive'
+import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex, getReviewStatus } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import { DEFAULT_SOP_HTML } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
@@ -20,10 +20,8 @@ const SORT_OPTIONS = [
 
 const STATUS_ORDER = { review: 0, draft: 1, active: 2 }
 
-function isOverdue(lastReviewed) {
-  const last = new Date(lastReviewed)
-  const now = new Date()
-  return (now - last) / (1000 * 60 * 60 * 24) > 92
+function isOverdue(sop) {
+  return getReviewStatus(sop.lastReviewed, sop.reviewCadence) === 'overdue'
 }
 
 function sortSops(sops, sortBy) {
@@ -39,8 +37,8 @@ function sortSops(sops, sortBy) {
       return sorted.sort((a, b) => b.title.localeCompare(a.title))
     case 'status':
       return sorted.sort((a, b) => {
-        const sa = isOverdue(a.lastReviewed) ? 'review' : (a.status || 'active')
-        const sb = isOverdue(b.lastReviewed) ? 'review' : (b.status || 'active')
+        const sa = isOverdue(a) ? 'review' : (a.status || 'active')
+        const sb = isOverdue(b) ? 'review' : (b.status || 'active')
         return (STATUS_ORDER[sa] ?? 3) - (STATUS_ORDER[sb] ?? 3)
       })
     case 'id':
@@ -87,7 +85,7 @@ export default function CompanySops() {
     load()
   }, [token])
 
-  const handleCreate = useCallback(async ({ sopId, title, category, owner, company: comp, description, useAi }) => {
+  const handleCreate = useCallback(async ({ sopId, title, category, owner, company: comp, reviewCadence, description, useAi }) => {
     if (!token) return
     setCreating(true)
     try {
@@ -133,6 +131,8 @@ export default function CompanySops() {
         status: 'draft',
         owner: owner || user?.name || user?.email || '',
         company: comp,
+        reviewCadence: reviewCadence || 'quarterly',
+        creatorEmail: user?.email || '',
         htmlFileId: htmlFile.id,
         metaFileId: metaFile.id,
       }
@@ -175,7 +175,7 @@ export default function CompanySops() {
 
   const totalSops = companySops.length
   const activeSops = companySops.filter(s => s.status === 'active').length
-  const overdueSops = companySops.filter(s => isOverdue(s.lastReviewed)).length
+  const overdueSops = companySops.filter(s => isOverdue(s)).length
 
   return (
     <div className="min-h-screen bg-white flex flex-col">

@@ -11,12 +11,13 @@ import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
   saveSopHtml, saveSopMeta, updateIndex,
-  bumpVersion, CATEGORIES, logAuditEvent,
+  bumpVersion, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
 } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import EditorToolbar from '../components/EditorToolbar'
 import HistoryPanel from '../components/HistoryPanel'
 import SaveDialog from '../components/SaveDialog'
+import VegaStar from '../components/VegaStar'
 
 
 export default function SopView() {
@@ -272,8 +273,36 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
         </div>
       </div>
 
+      {/* Review notification banner */}
+      {sopEntry && (() => {
+        const reviewStatus = getReviewStatus(sopEntry.lastReviewed, sopEntry.reviewCadence)
+        const cadence = REVIEW_CADENCES[sopEntry.reviewCadence]
+        if (reviewStatus === 'on-track' || !cadence) return null
+        return (
+          <div className={`border-b ${reviewStatus === 'overdue' ? 'bg-[#fffbeb] border-[#f5c542]/30' : 'bg-[#fff7ed] border-[#f97316]/20'}`}>
+            <div className="max-w-screen-xl mx-auto px-8 py-2.5 flex items-center gap-3">
+              <VegaStar size={16} glowing={reviewStatus === 'overdue'} />
+              <span className="text-xs text-[#92400e]">
+                {reviewStatus === 'overdue'
+                  ? `This SOP is overdue for its ${cadence.label.toLowerCase()} review.`
+                  : `This SOP is due for its ${cadence.label.toLowerCase()} review soon.`
+                }
+              </span>
+              {isAuthed && !editing && (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="ml-auto text-[10px] font-mono uppercase tracking-wider bg-[#f5c542] text-black px-3 py-1 hover:bg-[#e5b532] transition-colors"
+                >
+                  Start Review
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Edit toolbar */}
-      {editing && <EditorToolbar editor={editor} onAiAssist={() => setShowAiAssist(true)} />}
+      {editing && <EditorToolbar editor={editor} />}
 
       {/* Main content */}
       <div className="max-w-screen-xl mx-auto px-8 py-10">

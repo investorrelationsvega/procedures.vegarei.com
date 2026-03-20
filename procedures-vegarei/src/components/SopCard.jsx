@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { CATEGORIES } from '../lib/drive'
+import { CATEGORIES, REVIEW_CADENCES, getReviewStatus } from '../lib/drive'
+import VegaStar from './VegaStar'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -7,15 +8,6 @@ const STATUS_STYLES = {
   active:  { dot: '#22c55e', label: 'Active' },
   draft:   { dot: '#797469', label: 'Draft' },
   review:  { dot: '#f5c542', label: 'Needs Review' },
-}
-
-function getReviewStatus(lastReviewed) {
-  const last = new Date(lastReviewed)
-  const now = new Date()
-  const diffDays = (now - last) / (1000 * 60 * 60 * 24)
-  if (diffDays > 92) return 'overdue'      // > 1 quarter
-  if (diffDays > 75) return 'due-soon'     // within ~2 weeks of quarter
-  return 'on-track'
 }
 
 function daysAgo(dateStr) {
@@ -26,16 +18,18 @@ function daysAgo(dateStr) {
 
 export default function SopCard({ sop }) {
   const cat = CATEGORIES[sop.category] || { color: '#000', label: sop.category }
-  const reviewStatus = getReviewStatus(sop.lastReviewed)
+  const reviewStatus = getReviewStatus(sop.lastReviewed, sop.reviewCadence)
   const overdue = reviewStatus === 'overdue'
+  const dueSoon = reviewStatus === 'due-soon'
   const statusKey = overdue ? 'review' : (sop.status || 'active')
   const status = STATUS_STYLES[statusKey] || STATUS_STYLES.active
   const days = daysAgo(sop.lastReviewed)
+  const cadenceLabel = REVIEW_CADENCES[sop.reviewCadence]?.short || ''
 
   return (
     <Link
       to={`/sop/${sop.id}`}
-      className="group block no-underline"
+      className="group block no-underline relative"
       style={{
         border: `1px solid ${overdue ? 'rgba(245,197,66,0.4)' : 'rgba(0,0,0,0.08)'}`,
         background: overdue ? 'rgba(255,251,235,0.5)' : '#fff',
@@ -50,6 +44,13 @@ export default function SopCard({ sop }) {
         e.currentTarget.style.background = overdue ? 'rgba(255,251,235,0.5)' : '#fff'
       }}
     >
+      {/* Vega star review indicator */}
+      {(overdue || dueSoon) && (
+        <div className="absolute top-2.5 right-2.5">
+          <VegaStar size={14} glowing={overdue} />
+        </div>
+      )}
+
       {/* Category accent */}
       <div className="h-[2px]" style={{ background: cat.color }} />
 
@@ -59,7 +60,7 @@ export default function SopCard({ sop }) {
           <span style={mono} className="text-[10px] font-bold tracking-widest text-[#566F69] uppercase">
             {sop.id}
           </span>
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5 mr-5">
             <span
               className="w-[5px] h-[5px] rounded-full"
               style={{ background: status.dot }}
@@ -87,19 +88,23 @@ export default function SopCard({ sop }) {
             )}
           </div>
 
-          {/* Review indicator */}
-          <span
-            style={mono}
-            className={`text-[9px] uppercase tracking-wider ${
-              reviewStatus === 'overdue'
-                ? 'text-[#f5c542]'
-                : reviewStatus === 'due-soon'
-                  ? 'text-[#f97316]'
-                  : 'text-[#797469]'
-            }`}
-          >
-            {days}d ago
-          </span>
+          {/* Review timing */}
+          <div className="flex items-center gap-1.5" style={mono}>
+            {cadenceLabel && (
+              <span className="text-[9px] text-gray-300">{cadenceLabel}</span>
+            )}
+            <span
+              className={`text-[9px] uppercase tracking-wider ${
+                overdue
+                  ? 'text-[#f5c542] font-bold'
+                  : dueSoon
+                    ? 'text-[#f97316]'
+                    : 'text-[#797469]'
+              }`}
+            >
+              {days}d ago
+            </span>
+          </div>
         </div>
       </div>
     </Link>

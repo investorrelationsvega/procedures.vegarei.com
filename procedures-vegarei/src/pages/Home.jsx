@@ -1,4 +1,8 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
+import { loadIndex } from '../lib/drive'
+import { checkAndNotifyReviews } from '../lib/reviewNotifier'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -50,6 +54,15 @@ function CompanyCard({ company, onClick }) {
 
 export default function Home() {
   const navigate = useNavigate()
+  const { token } = useAuth()
+
+  // Check for overdue SOPs and send email reminders (once per day)
+  useEffect(() => {
+    if (!token || !import.meta.env.VITE_DRIVE_INDEX_FILE_ID) return
+    loadIndex(token)
+      .then(index => checkAndNotifyReviews(index, token))
+      .catch(() => {}) // silent — notification is best-effort
+  }, [token])
 
   return (
     <div style={{ background: '#ffffff', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>

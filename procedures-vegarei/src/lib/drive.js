@@ -218,6 +218,26 @@ export const COMPANIES = {
   'employee-handbook':   { label: 'Employee Handbook',  prefix: 'EHB', categories: ['policies', 'benefits', 'conduct', 'hr', 'safety', 'technology'] },
 }
 
+// ── Review cadence config ────────────────────────────────────
+export const REVIEW_CADENCES = {
+  quarterly:   { label: 'Quarterly',   days: 90,  short: '90d' },
+  biannually:  { label: 'Biannually',  days: 182, short: '6mo' },
+  annually:    { label: 'Annually',    days: 365, short: '1yr' },
+  'as-needed': { label: 'As Needed',   days: null, short: 'N/A' },
+}
+
+export function getReviewStatus(lastReviewed, cadence) {
+  if (!cadence || cadence === 'as-needed') return 'on-track'
+  const config = REVIEW_CADENCES[cadence]
+  if (!config?.days) return 'on-track'
+  const last = new Date(lastReviewed)
+  const now = new Date()
+  const diffDays = (now - last) / (1000 * 60 * 60 * 24)
+  if (diffDays > config.days) return 'overdue'
+  if (diffDays > config.days - 14) return 'due-soon'
+  return 'on-track'
+}
+
 // ── Auto-generate SOP ID ────────────────────────────────────
 // Format: PREFIX-CODE-NNN (e.g. PE-INV-001)
 export function generateSopId(companySlug, categoryKey, existingSops) {

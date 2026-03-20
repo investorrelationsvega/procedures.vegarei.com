@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { CATEGORIES, COMPANIES, generateSopId } from '../lib/drive'
+import { CATEGORIES, COMPANIES, REVIEW_CADENCES, generateSopId } from '../lib/drive'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -13,6 +13,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
   const [owner, setOwner] = useState('')
+  const [reviewCadence, setReviewCadence] = useState('quarterly')
 
   // Custom category
   const [showCustom, setShowCustom] = useState(false)
@@ -71,6 +72,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
       category,
       owner: owner.trim(),
       company,
+      reviewCadence,
       description: useAi ? description.trim() : '',
       useAi,
     })
@@ -193,6 +195,25 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                 placeholder="e.g. Dan Smith"
                 className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
               />
+            </Field>
+
+            {/* Review Cadence */}
+            <Field label="Review Cadence">
+              <div className="flex gap-1.5">
+                {Object.entries(REVIEW_CADENCES).map(([key, val]) => (
+                  <button
+                    key={key}
+                    onClick={() => setReviewCadence(key)}
+                    className={`flex-1 px-2 py-2 text-[10px] font-mono uppercase tracking-wider border transition-colors ${
+                      reviewCadence === key
+                        ? 'bg-black text-white border-black'
+                        : 'border-gray-200 text-[#797469] hover:border-black'
+                    }`}
+                  >
+                    {val.label}
+                  </button>
+                ))}
+              </div>
             </Field>
 
             {/* Auto-generated ID preview */}
