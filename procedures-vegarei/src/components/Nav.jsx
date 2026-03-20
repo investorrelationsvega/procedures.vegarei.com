@@ -10,9 +10,11 @@ export default function Nav() {
     <nav style={{ background: '#ffffff', borderBottom: '1px solid #000000' }} className="sticky top-0 z-50">
       <div className="max-w-screen-xl mx-auto px-8 h-12 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 no-underline">
-          <span style={{ ...mono, fontSize: 12, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#000000' }}>
-            Vega
-          </span>
+          {/* Vega logo mark */}
+          <svg viewBox="0 0 366 576" style={{ width: 14, height: 22, fill: '#000000', flexShrink: 0 }}>
+            <path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z" />
+            <path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z" />
+          </svg>
           <span style={{ color: '#d0d0d0', fontSize: 14 }}>|</span>
           <span style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#a0a0a0' }}>
             Procedures
