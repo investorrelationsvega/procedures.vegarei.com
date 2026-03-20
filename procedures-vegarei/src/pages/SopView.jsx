@@ -105,7 +105,7 @@ export default function SopView() {
       const newRevision = {
         version: newVersion,
         date: new Date().toISOString().split('T')[0],
-        author: user?.name || user?.email || 'J Jones',
+        author: user?.name || user?.email || 'Unknown User',
         summary,
         htmlSnapshot: updatedHtml,
       }
