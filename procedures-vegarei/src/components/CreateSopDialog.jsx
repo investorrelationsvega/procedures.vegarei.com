@@ -135,17 +135,25 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                     <input
                       type="text"
                       value={customLabel}
-                      onChange={e => setCustomLabel(e.target.value)}
-                      placeholder="Category name"
+                      onChange={e => {
+                        setCustomLabel(e.target.value)
+                        // Auto-suggest code from initials if user hasn't manually edited
+                        const words = e.target.value.trim().split(/\s+/)
+                        const suggested = words.map(w => w[0]?.toUpperCase() || '').join('').slice(0, 6)
+                        if (!customCode || customCode === customLabel.trim().split(/\s+/).map(w => w[0]?.toUpperCase() || '').join('').slice(0, 6)) {
+                          setCustomCode(suggested)
+                        }
+                      }}
+                      placeholder="e.g. Sales Operations"
                       className="flex-1 border border-gray-300 px-2 py-1.5 text-xs focus:outline-none focus:border-black"
                     />
                     <input
                       type="text"
                       value={customCode}
-                      onChange={e => setCustomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))}
+                      onChange={e => setCustomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
                       placeholder="CODE"
-                      maxLength={4}
-                      className="w-20 border border-gray-300 px-2 py-1.5 text-xs font-mono uppercase focus:outline-none focus:border-black"
+                      maxLength={6}
+                      className="w-24 border border-gray-300 px-2 py-1.5 text-xs font-mono uppercase focus:outline-none focus:border-black"
                     />
                   </div>
                   <div className="flex items-center justify-between">
