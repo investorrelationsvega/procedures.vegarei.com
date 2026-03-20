@@ -144,6 +144,17 @@
 
 .tiptap-editor:focus { outline: none; }
 
+/* ── Animations ─────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin { animation: spin 0.8s linear infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+
 /* ── Print Styles ────────────────────────────────────────── */
 @media print {
   nav, .sticky, button, .grid-bg, footer { display: none !important; }

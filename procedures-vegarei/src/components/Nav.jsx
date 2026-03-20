@@ -22,6 +22,14 @@ export default function Nav() {
         <div className="flex items-center gap-5">
           {isAuthed ? (
             <>
+              <Link
+                to="/settings/style-guide"
+                style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#a0a0a0', textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#000000' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#a0a0a0' }}
+              >
+                Style Guide
+              </Link>
               <span className="flex items-center gap-1.5">
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#27474D', display: 'inline-block' }} />
                 <span style={{ ...mono, fontSize: 10, color: '#a0a0a0', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Online</span>
