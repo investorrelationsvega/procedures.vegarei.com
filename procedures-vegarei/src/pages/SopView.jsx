@@ -17,7 +17,7 @@ import { MOCK_INDEX } from '../lib/mockData'
 import EditorToolbar from '../components/EditorToolbar'
 import HistoryPanel from '../components/HistoryPanel'
 import SaveDialog from '../components/SaveDialog'
-import AiAssistPanel from '../components/AiAssistPanel'
+
 
 export default function SopView() {
   const { id } = useParams()
@@ -34,7 +34,7 @@ export default function SopView() {
   const [saving, setSaving]         = useState(false)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(null)
-  const [showAiAssist, setShowAiAssist] = useState(false)
+
 
   // TipTap editor
   const editor = useEditor({
@@ -326,16 +326,6 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
         />
       )}
 
-      {showAiAssist && (
-        <AiAssistPanel
-          onInsert={(content) => {
-            if (editor) {
-              editor.chain().focus().insertContent(content).run()
-            }
-          }}
-          onClose={() => setShowAiAssist(false)}
-        />
-      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-export default function EditorToolbar({ editor, onAiAssist }) {
+export default function EditorToolbar({ editor }) {
   if (!editor) return null
 
   const btn = (label, action, active) => (
@@ -41,19 +41,6 @@ export default function EditorToolbar({ editor, onAiAssist }) {
       {btn('+ Row', () => editor.chain().focus().addRowAfter().run(), false)}
       {btn('+ Col', () => editor.chain().focus().addColumnAfter().run(), false)}
       {btn('Del Row', () => editor.chain().focus().deleteRow().run(), false)}
-
-      {onAiAssist && (
-        <>
-          <div className="w-px bg-gray-300 mx-1" />
-          <button
-            onClick={onAiAssist}
-            className="px-3 py-1.5 text-xs font-mono border border-[#27474D] text-[#27474D] hover:bg-[#27474D] hover:text-white transition-colors flex items-center gap-1.5"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-            AI Assist
-          </button>
-        </>
-      )}
     </div>
   )
 }

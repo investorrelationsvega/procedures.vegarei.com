@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { loadIndex, CATEGORIES, createDriveFile, addSopToIndex } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
+import { DEFAULT_SOP_HTML } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
 import CreateSopDialog from '../components/CreateSopDialog'
 
@@ -19,17 +20,6 @@ const COMPANY_LABELS = {
   'valuations': 'Valuations',
   'employee-handbook': 'Employee Handbook',
 }
-
-const DEFAULT_SOP_HTML = `<h2>1. Purpose</h2>
-<p>Describe the purpose of this procedure.</p>
-<h2>2. Scope</h2>
-<p>Define who and what this procedure applies to.</p>
-<h2>3. Responsibilities</h2>
-<p>List the roles responsible for each step.</p>
-<h2>4. Procedure</h2>
-<ol><li>Step one</li><li>Step two</li><li>Step three</li></ol>
-<h2>5. References</h2>
-<p>List any related documents, policies, or contacts.</p>`
 
 export default function CompanySops() {
   const { company } = useParams()
@@ -66,13 +56,17 @@ export default function CompanySops() {
     load()
   }, [token])
 
-  const handleCreate = useCallback(async ({ sopId, title, category, owner, company: comp }) => {
+  const handleCreate = useCallback(async ({ sopId, title, category, owner, company: comp, description, useAi }) => {
     if (!token) return
     setCreating(true)
     try {
+      // TODO: If useAi && description, call Claude API to generate SOP HTML
+      // For now, use the blank template. AI generation will be wired up next.
+      const sopHtml = DEFAULT_SOP_HTML
+
       const htmlFile = await createDriveFile(
         `${sopId}.html`,
-        DEFAULT_SOP_HTML,
+        sopHtml,
         'text/html',
         token
       )
