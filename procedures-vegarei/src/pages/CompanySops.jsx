@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { loadIndex, CATEGORIES, createDriveFile, addSopToIndex } from '../lib/drive'
+import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import { DEFAULT_SOP_HTML } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
@@ -9,16 +9,45 @@ import CreateSopDialog from '../components/CreateSopDialog'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
-const COMPANY_LABELS = {
-  'assisted-living': 'Assisted Living',
-  'builders': 'Builders',
-  'capital-markets': 'Capital Markets',
-  'development': 'Development',
-  'hospice': 'Hospice',
-  'private-equity': 'Private Equity',
-  'property-management': 'Property Management',
-  'valuations': 'Valuations',
-  'employee-handbook': 'Employee Handbook',
+const SORT_OPTIONS = [
+  { value: 'reviewed-desc', label: 'Last Reviewed (newest)' },
+  { value: 'reviewed-asc',  label: 'Last Reviewed (oldest)' },
+  { value: 'title-asc',     label: 'Title (A–Z)' },
+  { value: 'title-desc',    label: 'Title (Z–A)' },
+  { value: 'status',        label: 'Status' },
+  { value: 'id',            label: 'SOP ID' },
+]
+
+const STATUS_ORDER = { review: 0, draft: 1, active: 2 }
+
+function isOverdue(lastReviewed) {
+  const last = new Date(lastReviewed)
+  const now = new Date()
+  return (now - last) / (1000 * 60 * 60 * 24) > 92
+}
+
+function sortSops(sops, sortBy) {
+  const sorted = [...sops]
+  switch (sortBy) {
+    case 'reviewed-desc':
+      return sorted.sort((a, b) => new Date(b.lastReviewed) - new Date(a.lastReviewed))
+    case 'reviewed-asc':
+      return sorted.sort((a, b) => new Date(a.lastReviewed) - new Date(b.lastReviewed))
+    case 'title-asc':
+      return sorted.sort((a, b) => a.title.localeCompare(b.title))
+    case 'title-desc':
+      return sorted.sort((a, b) => b.title.localeCompare(a.title))
+    case 'status':
+      return sorted.sort((a, b) => {
+        const sa = isOverdue(a.lastReviewed) ? 'review' : (a.status || 'active')
+        const sb = isOverdue(b.lastReviewed) ? 'review' : (b.status || 'active')
+        return (STATUS_ORDER[sa] ?? 3) - (STATUS_ORDER[sb] ?? 3)
+      })
+    case 'id':
+      return sorted.sort((a, b) => a.id.localeCompare(b.id))
+    default:
+      return sorted
+  }
 }
 
 export default function CompanySops() {
@@ -32,8 +61,10 @@ export default function CompanySops() {
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('reviewed-desc')
 
-  const companyName = COMPANY_LABELS[company] || company
+  const companyConfig = COMPANIES[company]
+  const companyName = companyConfig?.label || company
 
   useEffect(() => {
     async function load() {
@@ -61,7 +92,6 @@ export default function CompanySops() {
     setCreating(true)
     try {
       // TODO: If useAi && description, call Claude API to generate SOP HTML
-      // For now, use the blank template. AI generation will be wired up next.
       const sopHtml = DEFAULT_SOP_HTML
 
       const htmlFile = await createDriveFile(
@@ -79,7 +109,7 @@ export default function CompanySops() {
           date: now,
           author: user?.name || user?.email || 'Unknown User',
           summary: 'Initial creation',
-          htmlSnapshot: DEFAULT_SOP_HTML,
+          htmlSnapshot: sopHtml,
         }],
         auditLog: [{
           action: 'created',
@@ -121,13 +151,16 @@ export default function CompanySops() {
   // Filter SOPs for this company
   const companySops = index?.sops?.filter(s => s.company === company) || []
 
-  const filtered = companySops.filter(s => {
-    const matchesSearch = search === '' ||
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.id.toLowerCase().includes(search.toLowerCase())
-    const matchesFilter = activeFilter === 'all' || s.category === activeFilter
-    return matchesSearch && matchesFilter
-  })
+  const filtered = useMemo(() => {
+    let result = companySops.filter(s => {
+      const matchesSearch = search === '' ||
+        s.title.toLowerCase().includes(search.toLowerCase()) ||
+        s.id.toLowerCase().includes(search.toLowerCase())
+      const matchesFilter = activeFilter === 'all' || s.category === activeFilter
+      return matchesSearch && matchesFilter
+    })
+    return sortSops(result, sortBy)
+  }, [companySops, search, activeFilter, sortBy])
 
   // Get unique categories that exist in this company's SOPs
   const activeCategories = [...new Set(companySops.map(s => s.category))]
@@ -142,6 +175,7 @@ export default function CompanySops() {
 
   const totalSops = companySops.length
   const activeSops = companySops.filter(s => s.status === 'active').length
+  const overdueSops = companySops.filter(s => isOverdue(s.lastReviewed)).length
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -173,22 +207,31 @@ export default function CompanySops() {
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-6 pb-1">
+            <div className="flex items-center gap-5 pb-1">
               <div className="text-right">
-                <span style={mono} className="text-[20px] font-bold text-black">{totalSops}</span>
+                <span style={mono} className="text-[18px] font-bold text-black">{totalSops}</span>
                 <span style={mono} className="text-[10px] text-[#797469] ml-1.5 uppercase tracking-wider">Total</span>
               </div>
-              <div className="w-px h-6 bg-gray-200" />
+              <div className="w-px h-5 bg-gray-200" />
               <div className="text-right">
-                <span style={mono} className="text-[20px] font-bold text-[#22c55e]">{activeSops}</span>
+                <span style={mono} className="text-[18px] font-bold text-[#22c55e]">{activeSops}</span>
                 <span style={mono} className="text-[10px] text-[#797469] ml-1.5 uppercase tracking-wider">Active</span>
               </div>
+              {overdueSops > 0 && (
+                <>
+                  <div className="w-px h-5 bg-gray-200" />
+                  <div className="text-right">
+                    <span style={mono} className="text-[18px] font-bold text-[#f5c542]">{overdueSops}</span>
+                    <span style={mono} className="text-[10px] text-[#797469] ml-1.5 uppercase tracking-wider">Due</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search + filters bar */}
+      {/* Search + filters + sort bar */}
       <div className="border-b border-gray-100 bg-[#fafafa]">
         <div className="max-w-screen-xl mx-auto px-8 py-3 flex items-center gap-3">
           {/* Search */}
@@ -206,7 +249,7 @@ export default function CompanySops() {
           </div>
 
           {/* Category filter pills */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={() => setActiveFilter('all')}
               className={`px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider border transition-colors ${
@@ -239,7 +282,18 @@ export default function CompanySops() {
             })}
           </div>
 
-          {/* Spacer + New SOP */}
+          {/* Sort */}
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className="border border-gray-200 bg-white px-2 py-1.5 text-[10px] font-mono text-[#797469] focus:outline-none focus:border-black cursor-pointer"
+          >
+            {SORT_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+
+          {/* New SOP */}
           <div className="ml-auto">
             {isAuthed && (
               <button
@@ -276,7 +330,6 @@ export default function CompanySops() {
             const cat = CATEGORIES[catKey] || { label: catKey, color: '#999' }
             return (
               <section key={catKey} className="mb-10">
-                {/* Category header */}
                 <div className="flex items-center gap-3 mb-4">
                   <span
                     className="w-2 h-2 rounded-full flex-shrink-0"
@@ -291,7 +344,6 @@ export default function CompanySops() {
                   </span>
                 </div>
 
-                {/* SOP grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {sops.map(sop => (
                     <SopCard key={sop.id} sop={sop} />
@@ -301,7 +353,6 @@ export default function CompanySops() {
             )
           })}
 
-          {/* Empty states */}
           {Object.keys(grouped).length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-12 h-12 rounded-full border-2 border-gray-200 flex items-center justify-center mb-4">
@@ -343,6 +394,7 @@ export default function CompanySops() {
       {showCreate && (
         <CreateSopDialog
           company={company}
+          existingSops={companySops}
           onSave={handleCreate}
           onCancel={() => setShowCreate(false)}
           loading={creating}
