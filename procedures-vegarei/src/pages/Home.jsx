@@ -11,6 +11,7 @@ const COMPANIES = [
   { slug: 'private-equity',        num: '06', label: 'Private Equity',             desc: 'Sales & Fund Administration' },
   { slug: 'property-management',   num: '07', label: 'Property Management & Real Estate', desc: 'Operations & Holdings' },
   { slug: 'valuations',            num: '08', label: 'Valuations',                 desc: 'Appraisal & Advisory' },
+  { slug: 'employee-handbook',     num: '09', label: 'Employee Handbook',             desc: 'Policies & Guidelines' },
 ]
 
 function CompanyCard({ company, onClick }) {
