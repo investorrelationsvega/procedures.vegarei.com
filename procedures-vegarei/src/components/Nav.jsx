@@ -1,14 +1,8 @@
 import { Link } from 'react-router-dom'
-import { useGoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../lib/auth'
 
 export default function Nav() {
   const { user, login, logout, isAuthed } = useAuth()
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: login,
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly openid email profile',
-  })
 
   return (
     <nav className="border-b border-black bg-white sticky top-0 z-50">
@@ -37,7 +31,7 @@ export default function Nav() {
             </>
           ) : (
             <button
-              onClick={() => googleLogin()}
+              onClick={() => login()}
               className="text-xs font-medium text-black border border-black px-3 py-1.5 hover:bg-black hover:text-white transition-colors"
             >
               Sign in to edit
