@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex, getReviewStatus } from '../lib/drive'
+import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex, getReviewStatus, getCompanyFolder, cacheFolderIds } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import { DEFAULT_SOP_HTML } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
@@ -92,11 +92,15 @@ export default function CompanySops() {
       // TODO: If useAi && description, call Claude API to generate SOP HTML
       const sopHtml = DEFAULT_SOP_HTML
 
+      // Get (or create) the business unit folder in Drive
+      const folderId = await getCompanyFolder(comp, index, token)
+
       const htmlFile = await createDriveFile(
         `${sopId}.html`,
         sopHtml,
         'text/html',
-        token
+        token,
+        folderId
       )
       const now = new Date().toISOString().split('T')[0]
       const initialMeta = {
@@ -120,8 +124,16 @@ export default function CompanySops() {
         `${sopId}.meta.json`,
         JSON.stringify(initialMeta, null, 2),
         'application/json',
-        token
+        token,
+        folderId
       )
+
+      // Cache the folder ID in the index so we don't look it up every time
+      let currentIndex = index
+      if (folderId && !index?.folderIds?.[comp]) {
+        currentIndex = await cacheFolderIds(index, comp, folderId, index?.folderIds?.root, token)
+      }
+
       const newSop = {
         id: sopId,
         title,
@@ -136,7 +148,7 @@ export default function CompanySops() {
         htmlFileId: htmlFile.id,
         metaFileId: metaFile.id,
       }
-      const updatedIndex = await addSopToIndex(index, newSop, token)
+      const updatedIndex = await addSopToIndex(currentIndex, newSop, token)
       setIndex(updatedIndex)
       setShowCreate(false)
       navigate(`/sop/${sopId}`)

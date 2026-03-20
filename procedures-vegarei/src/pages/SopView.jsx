@@ -10,7 +10,7 @@ import TableHeader from '@tiptap/extension-table-header'
 import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
-  saveSopHtml, saveSopMeta, updateIndex,
+  saveSopHtml, saveSopMeta, updateIndex, updateSopInIndex,
   bumpVersion, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
 } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
@@ -147,6 +147,39 @@ export default function SopView() {
     setShowHistory(false)
     setEditing(true)
   }, [editor])
+
+  // Mark review as complete — resets the review clock
+  const handleCompleteReview = useCallback(async () => {
+    if (!sopEntry || !token || !index) return
+    setSaving(true)
+    try {
+      const now = new Date().toISOString().split('T')[0]
+
+      // Log review event in audit trail
+      const event = {
+        action: 'review-completed',
+        date: new Date().toISOString(),
+        user: user?.name || user?.email || 'Unknown User',
+        email: user?.email || '',
+      }
+      const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+
+      // Update index: reset lastReviewed, set status to active
+      const updatedIndex = await updateSopInIndex(index, sopEntry.id, {
+        lastReviewed: now,
+        status: 'active',
+      }, token)
+
+      setMeta(updatedMeta)
+      setIndex(updatedIndex)
+      setSopEntry(prev => ({ ...prev, lastReviewed: now, status: 'active' }))
+    } catch (err) {
+      console.error(err)
+      alert('Failed to complete review. Check Drive permissions.')
+    } finally {
+      setSaving(false)
+    }
+  }, [sopEntry, token, index, meta, user])
 
   const handlePrint = useCallback(async () => {
     // Log to audit trail
@@ -289,12 +322,24 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
                 }
               </span>
               {isAuthed && !editing && (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="ml-auto text-[10px] font-mono uppercase tracking-wider bg-[#f5c542] text-black px-3 py-1 hover:bg-[#e5b532] transition-colors"
-                >
-                  Start Review
-                </button>
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="text-[10px] font-mono uppercase tracking-wider border border-[#f5c542] text-[#92400e] px-3 py-1 hover:bg-[#f5c542]/20 transition-colors"
+                  >
+                    Edit & Review
+                  </button>
+                  <button
+                    onClick={handleCompleteReview}
+                    disabled={saving}
+                    className="text-[10px] font-mono uppercase tracking-wider bg-[#f5c542] text-black px-3 py-1 hover:bg-[#e5b532] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {saving ? (
+                      <span className="w-2.5 h-2.5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    ) : null}
+                    Mark Review Complete
+                  </button>
+                </div>
               )}
             </div>
           </div>

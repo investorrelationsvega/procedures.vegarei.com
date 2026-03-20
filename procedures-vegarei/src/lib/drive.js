@@ -74,6 +74,25 @@ export async function updateIndex(index, sopId, version, lastReviewed, token) {
       s.id === sopId ? { ...s, version, lastReviewed } : s
     ),
   }
+  await saveIndex(updated, token)
+  return updated
+}
+
+// ── Update arbitrary fields on an SOP in the index ─────────
+export async function updateSopInIndex(index, sopId, fields, token) {
+  const updated = {
+    ...index,
+    lastUpdated: new Date().toISOString().split('T')[0],
+    sops: index.sops.map(s =>
+      s.id === sopId ? { ...s, ...fields } : s
+    ),
+  }
+  await saveIndex(updated, token)
+  return updated
+}
+
+// ── Save the full index back to Drive ──────────────────────
+async function saveIndex(index, token) {
   await fetch(
     `https://www.googleapis.com/upload/drive/v3/files/${INDEX_FILE_ID}?uploadType=media`,
     {
@@ -82,9 +101,22 @@ export async function updateIndex(index, sopId, version, lastReviewed, token) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(updated, null, 2),
+      body: JSON.stringify(index, null, 2),
     }
   )
+}
+
+// ── Cache folder IDs in the index ──────────────────────────
+export async function cacheFolderIds(index, companySlug, folderId, rootId, token) {
+  const updated = {
+    ...index,
+    folderIds: {
+      ...(index.folderIds || {}),
+      root: rootId || index.folderIds?.root,
+      [companySlug]: folderId,
+    },
+  }
+  await saveIndex(updated, token)
   return updated
 }
 
@@ -97,9 +129,60 @@ export function bumpVersion(current, type) {
 }
 
 // ── Create a new file in Drive ───────────────────────────────
-export async function createDriveFile(name, content, mimeType, token) {
-  // Step 1: Create file metadata
-  const metaRes = await fetch(
+// Uses multipart upload to prevent Google from converting files to Google Docs.
+// The old two-step approach (create metadata → upload content) caused Drive to
+// interpret mimeType as a conversion target, turning .html/.json into Google Docs.
+export async function createDriveFile(name, content, mimeType, token, parentFolderId) {
+  const metadata = { name, mimeType }
+  if (parentFolderId) metadata.parents = [parentFolderId]
+
+  const boundary = '---vega_sop_boundary'
+  const body =
+    `--${boundary}\r\n` +
+    `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+    `${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Type: ${mimeType}\r\n\r\n` +
+    `${content}\r\n` +
+    `--${boundary}--`
+
+  const res = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    }
+  )
+  if (!res.ok) throw new Error(`Drive create failed: ${res.status}`)
+  return res.json()
+}
+
+// ── Find or create a Drive folder ──────────────────────────
+// Returns the folder ID, creating it (and parent) if it doesn't exist.
+async function findFolder(name, parentId, token) {
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false` +
+    (parentId ? ` and '${parentId}' in parents` : '')
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  if (!res.ok) throw new Error(`Drive folder search failed: ${res.status}`)
+  const data = await res.json()
+  return data.files?.[0]?.id || null
+}
+
+async function createFolder(name, parentId, token) {
+  const metadata = {
+    name,
+    mimeType: 'application/vnd.google-apps.folder',
+  }
+  if (parentId) metadata.parents = [parentId]
+
+  const res = await fetch(
     'https://www.googleapis.com/drive/v3/files',
     {
       method: 'POST',
@@ -107,26 +190,37 @@ export async function createDriveFile(name, content, mimeType, token) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, mimeType }),
+      body: JSON.stringify(metadata),
     }
   )
-  if (!metaRes.ok) throw new Error(`Drive create failed: ${metaRes.status}`)
-  const file = await metaRes.json()
+  if (!res.ok) throw new Error(`Drive folder create failed: ${res.status}`)
+  const folder = await res.json()
+  return folder.id
+}
 
-  // Step 2: Upload content
-  const uploadRes = await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`,
-    {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': mimeType,
-      },
-      body: content,
-    }
-  )
-  if (!uploadRes.ok) throw new Error(`Drive upload failed: ${uploadRes.status}`)
-  return file
+// Get (or create) the folder for a business unit:
+//   Vega Procedures / {Business Unit Label}
+// Caches folder IDs in the index to avoid repeated lookups.
+export async function getCompanyFolder(companySlug, index, token) {
+  // Check if we already have it cached in the index
+  const cached = index?.folderIds?.[companySlug]
+  if (cached) return cached
+
+  const companyConfig = COMPANIES[companySlug]
+  if (!companyConfig) return null
+
+  // Find or create root "Vega Procedures" folder
+  let rootId = index?.folderIds?.root || null
+  if (!rootId) {
+    rootId = await findFolder('Vega Procedures', null, token)
+    if (!rootId) rootId = await createFolder('Vega Procedures', null, token)
+  }
+
+  // Find or create business unit folder inside root
+  let buId = await findFolder(companyConfig.label, rootId, token)
+  if (!buId) buId = await createFolder(companyConfig.label, rootId, token)
+
+  return buId
 }
 
 // ── Add a new SOP to the master index ────────────────────────
