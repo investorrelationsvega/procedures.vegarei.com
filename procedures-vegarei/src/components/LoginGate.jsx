@@ -26,10 +26,14 @@ export default function LoginGate({ children }) {
   const [error, setError] = useState(null)
 
   const googleLogin = useGoogleLogin({
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       setSigningIn(true)
       setError(null)
-      login(res)
+      const result = await login(res)
+      if (result && !result.success) {
+        setSigningIn(false)
+        setError(result.error === 'domain' ? 'Access restricted to @vegarei.com accounts.' : 'Sign-in failed. Please try again.')
+      }
     },
     onError: () => {
       setError('Sign-in failed. Please try again.')

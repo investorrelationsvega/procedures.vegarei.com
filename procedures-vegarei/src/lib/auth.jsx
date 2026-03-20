@@ -19,19 +19,24 @@ export function AuthProvider({ children }) {
         'https://www.googleapis.com/oauth2/v3/userinfo',
         { headers: { Authorization: `Bearer ${accessToken}` } }
       )
+      if (!profileRes.ok) {
+        throw new Error(`Profile fetch failed: ${profileRes.status}`)
+      }
       const profile = await profileRes.json()
 
       // Only allow @vegarei.com accounts
       if (!profile.email?.endsWith('@vegarei.com')) {
         alert('Access restricted to @vegarei.com accounts.')
         googleLogout()
-        return
+        return { success: false, error: 'domain' }
       }
 
       setToken(accessToken)
       setUser(profile)
+      return { success: true }
     } catch (err) {
       console.error('Login error:', err)
+      return { success: false, error: err.message }
     } finally {
       setLoading(false)
     }
