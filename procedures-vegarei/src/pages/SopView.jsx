@@ -11,7 +11,7 @@ import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
   saveSopHtml, saveSopMeta, updateIndex,
-  bumpVersion, CATEGORIES,
+  bumpVersion, CATEGORIES, logAuditEvent,
 } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import EditorToolbar from '../components/EditorToolbar'
@@ -145,6 +145,48 @@ export default function SopView() {
     setEditing(true)
   }, [editor])
 
+  const handlePrint = useCallback(async () => {
+    // Log to audit trail
+    if (sopEntry?.metaFileId && token) {
+      const event = {
+        action: 'print',
+        date: new Date().toISOString(),
+        user: user?.name || user?.email || 'Unknown User',
+        email: user?.email || '',
+      }
+      const updated = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+      setMeta(updated)
+    }
+    window.print()
+  }, [sopEntry, token, meta, user])
+
+  const handleDownload = useCallback(async () => {
+    // Log to audit trail
+    if (sopEntry?.metaFileId && token) {
+      const event = {
+        action: 'download',
+        date: new Date().toISOString(),
+        user: user?.name || user?.email || 'Unknown User',
+        email: user?.email || '',
+      }
+      const updated = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+      setMeta(updated)
+    }
+    // Create downloadable HTML file
+    const fullHtml = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${sopEntry?.title || id}</title>
+<style>body{font-family:Inter,system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a1a1a}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding:8px 12px;text-align:left}</style>
+</head><body>${html}</body></html>`
+    const blob = new Blob([fullHtml], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${sopEntry?.id || id}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [sopEntry, token, meta, user, html, id])
+
   const cat = sopEntry ? CATEGORIES[sopEntry.category] : null
 
   return (
@@ -171,6 +213,23 @@ export default function SopView() {
               <span className="font-mono text-[10px] text-[#566F69]">
                 v{sopEntry.version} · {sopEntry.lastReviewed}
               </span>
+            )}
+
+            {isAuthed && !editing && sopEntry && (
+              <>
+                <button
+                  onClick={handlePrint}
+                  className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors"
+                >
+                  Print
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors"
+                >
+                  Download
+                </button>
+              </>
             )}
 
             {meta && (

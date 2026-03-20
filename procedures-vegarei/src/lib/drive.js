@@ -96,6 +96,72 @@ export function bumpVersion(current, type) {
   return `${major}.${minor}.${(patch || 0) + 1}`
 }
 
+// ── Create a new file in Drive ───────────────────────────────
+export async function createDriveFile(name, content, mimeType, token) {
+  // Step 1: Create file metadata
+  const metaRes = await fetch(
+    'https://www.googleapis.com/drive/v3/files',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, mimeType }),
+    }
+  )
+  if (!metaRes.ok) throw new Error(`Drive create failed: ${metaRes.status}`)
+  const file = await metaRes.json()
+
+  // Step 2: Upload content
+  const uploadRes = await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': mimeType,
+      },
+      body: content,
+    }
+  )
+  if (!uploadRes.ok) throw new Error(`Drive upload failed: ${uploadRes.status}`)
+  return file
+}
+
+// ── Add a new SOP to the master index ────────────────────────
+export async function addSopToIndex(index, newSop, token) {
+  const updated = {
+    ...index,
+    lastUpdated: new Date().toISOString().split('T')[0],
+    sops: [...index.sops, newSop],
+  }
+  const INDEX_FILE = import.meta.env.VITE_DRIVE_INDEX_FILE_ID
+  await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files/${INDEX_FILE}?uploadType=media`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updated, null, 2),
+    }
+  )
+  return updated
+}
+
+// ── Log an audit event (print, download, etc.) ──────────────
+export async function logAuditEvent(metaFileId, meta, event, token) {
+  if (!metaFileId) return meta
+  const updatedMeta = {
+    ...meta,
+    auditLog: [event, ...(meta?.auditLog || [])],
+  }
+  await saveSopMeta(metaFileId, updatedMeta, token)
+  return updatedMeta
+}
+
 // ── Category config ────────────────────────────────────────
 export const CATEGORIES = {
   legal:      { label: 'Legal & Formation',  color: '#f5c542', folder: '01_Legal_Formation' },

@@ -1,28 +1,44 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { loadIndex, CATEGORIES } from '../lib/drive'
+import { loadIndex, CATEGORIES, createDriveFile, addSopToIndex } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import SopCard from '../components/SopCard'
+import CreateSopDialog from '../components/CreateSopDialog'
 
 const COMPANY_LABELS = {
   'assisted-living': 'Assisted Living',
   'builders': 'Builders',
   'capital-markets': 'Capital Markets',
   'development': 'Development',
+  'hospice': 'Hospice',
   'private-equity': 'Private Equity',
   'property-management': 'Property Management',
-  'real-estate-brokerage': 'Real Estate Brokerage',
   'valuations': 'Valuations',
+  'employee-handbook': 'Employee Handbook',
 }
+
+const DEFAULT_SOP_HTML = `<h2>1. Purpose</h2>
+<p>Describe the purpose of this procedure.</p>
+<h2>2. Scope</h2>
+<p>Define who and what this procedure applies to.</p>
+<h2>3. Responsibilities</h2>
+<p>List the roles responsible for each step.</p>
+<h2>4. Procedure</h2>
+<ol><li>Step one</li><li>Step two</li><li>Step three</li></ol>
+<h2>5. References</h2>
+<p>List any related documents, policies, or contacts.</p>`
 
 export default function CompanySops() {
   const { company } = useParams()
-  const { token } = useAuth()
+  const { token, user, isAuthed } = useAuth()
+  const navigate = useNavigate()
   const [index, setIndex] = useState(null)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   const companyName = COMPANY_LABELS[company] || company
 
@@ -47,19 +63,83 @@ export default function CompanySops() {
     load()
   }, [token])
 
+  const handleCreate = useCallback(async ({ sopId, title, category, owner, company: comp }) => {
+    if (!token) return
+    setCreating(true)
+    try {
+      // Create HTML file in Drive
+      const htmlFile = await createDriveFile(
+        `${sopId}.html`,
+        DEFAULT_SOP_HTML,
+        'text/html',
+        token
+      )
+
+      // Create meta file in Drive
+      const now = new Date().toISOString().split('T')[0]
+      const initialMeta = {
+        id: sopId,
+        currentVersion: '1.0',
+        revisions: [{
+          version: '1.0',
+          date: now,
+          author: user?.name || user?.email || 'Unknown User',
+          summary: 'Initial creation',
+          htmlSnapshot: DEFAULT_SOP_HTML,
+        }],
+        auditLog: [{
+          action: 'created',
+          date: new Date().toISOString(),
+          user: user?.name || user?.email || 'Unknown User',
+          email: user?.email || '',
+        }],
+      }
+      const metaFile = await createDriveFile(
+        `${sopId}.meta.json`,
+        JSON.stringify(initialMeta, null, 2),
+        'application/json',
+        token
+      )
+
+      // Add to index
+      const newSop = {
+        id: sopId,
+        title,
+        category,
+        version: '1.0',
+        lastReviewed: now,
+        status: 'draft',
+        owner: owner || user?.name || user?.email || '',
+        company: comp,
+        htmlFileId: htmlFile.id,
+        metaFileId: metaFile.id,
+      }
+      const updatedIndex = await addSopToIndex(index, newSop, token)
+      setIndex(updatedIndex)
+      setShowCreate(false)
+      navigate(`/sop/${sopId}`)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to create SOP. Check Drive permissions and try again.')
+    } finally {
+      setCreating(false)
+    }
+  }, [token, user, index, navigate])
+
+  // Filter SOPs for this company
+  const companySops = index?.sops?.filter(s => s.company === company) || []
+
   const grouped = {}
-  if (index?.sops) {
-    const filtered = index.sops.filter(s =>
-      search === '' ||
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.id.toLowerCase().includes(search.toLowerCase())
-    )
-    filtered.forEach(sop => {
-      const key = sop.category || 'other'
-      if (!grouped[key]) grouped[key] = []
-      grouped[key].push(sop)
-    })
-  }
+  const filtered = companySops.filter(s =>
+    search === '' ||
+    s.title.toLowerCase().includes(search.toLowerCase()) ||
+    s.id.toLowerCase().includes(search.toLowerCase())
+  )
+  filtered.forEach(sop => {
+    const key = sop.category || 'other'
+    if (!grouped[key]) grouped[key] = []
+    grouped[key].push(sop)
+  })
 
   return (
     <div className="min-h-screen bg-white">
@@ -86,7 +166,7 @@ export default function CompanySops() {
       </div>
 
       <div className="max-w-screen-xl mx-auto px-8 py-10">
-        <div className="mb-10">
+        <div className="mb-10 flex items-center gap-4">
           <input
             type="text"
             value={search}
@@ -94,6 +174,14 @@ export default function CompanySops() {
             placeholder="Search SOPs…"
             className="w-full max-w-md border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:border-black"
           />
+          {isAuthed && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="text-xs font-mono bg-black text-white px-4 py-2.5 hover:bg-[#27474D] transition-colors whitespace-nowrap"
+            >
+              + New SOP
+            </button>
+          )}
         </div>
 
         {loading && (
@@ -138,10 +226,20 @@ export default function CompanySops() {
         })}
 
         {Object.keys(grouped).length === 0 && !loading && (
-          <p className="text-sm text-[#566F69]"
-             style={{ fontFamily: "'Space Mono', monospace" }}>
-            {search ? `No SOPs match "${search}".` : 'No SOPs available yet.'}
-          </p>
+          <div className="text-center py-16">
+            <p className="text-sm text-[#566F69] mb-4"
+               style={{ fontFamily: "'Space Mono', monospace" }}>
+              {search ? `No SOPs match "${search}".` : 'No SOPs created yet for this business unit.'}
+            </p>
+            {isAuthed && !search && (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="text-xs font-mono bg-black text-white px-4 py-2.5 hover:bg-[#27474D] transition-colors"
+              >
+                + Create First SOP
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -151,6 +249,15 @@ export default function CompanySops() {
           Vega {companyName} · procedures.vegarei.com · Confidential
         </p>
       </footer>
+
+      {showCreate && (
+        <CreateSopDialog
+          company={company}
+          onSave={handleCreate}
+          onCancel={() => setShowCreate(false)}
+          loading={creating}
+        />
+      )}
     </div>
   )
 }
