@@ -1,49 +1,108 @@
+import { useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../lib/auth'
 
+const mono = { fontFamily: "'Space Mono', monospace" }
+
 export default function LoginGate({ children }) {
   const { isAuthed, loading, login } = useAuth()
+  const [signingIn, setSigningIn] = useState(false)
+  const [error, setError] = useState(null)
 
   const googleLogin = useGoogleLogin({
-    onSuccess: login,
+    onSuccess: (res) => {
+      setSigningIn(true)
+      setError(null)
+      login(res)
+    },
+    onError: () => {
+      setError('Sign-in failed. Please try again.')
+      setSigningIn(false)
+    },
     scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly openid email profile',
   })
 
-  if (loading) {
+  // Loading / auto-connecting state
+  if (loading || signingIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-sm text-gray-400 tracking-wider uppercase"
-           style={{ fontFamily: "'Space Mono', monospace" }}>
-          Authenticating…
-        </p>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff' }}>
+        <div className="grid-bg" />
+        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          {/* Vega V + Star */}
+          <svg viewBox="0 0 366 576" style={{ width: 48, height: 75, fill: '#a0a0a0', marginBottom: 24, opacity: 0.4 }}>
+            <path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z" />
+            <path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z" />
+          </svg>
+          <div style={{ ...mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#27474D', marginTop: 8 }}>
+            Connecting…
+          </div>
+        </div>
       </div>
     )
   }
 
+  // Login screen
   if (!isAuthed) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <p className="text-[10px] tracking-widest uppercase text-gray-400 mb-4 font-medium"
-             style={{ fontFamily: "'Space Mono', monospace" }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff' }}>
+        <div className="grid-bg" />
+        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          {/* Vega V + Star */}
+          <svg viewBox="0 0 366 576" style={{ width: 48, height: 75, fill: '#a0a0a0', marginBottom: 24, opacity: 0.4 }}>
+            <path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z" />
+            <path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z" />
+          </svg>
+
+          <div style={{ ...mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#27474D', marginBottom: 12 }}>
             Vega Companies
-          </p>
-          <h1 className="text-2xl font-bold text-black mb-2">
-            Standard Operating Procedures
+          </div>
+
+          <h1 style={{ ...mono, fontSize: 28, fontWeight: 400, color: '#000000', margin: '0 0 40px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Procedures
           </h1>
-          <p className="text-sm text-gray-500 mb-8">
-            Sign in with your @vegarei.com account to continue.
-          </p>
+
           <button
             onClick={() => googleLogin()}
-            className="text-sm font-medium text-black border-2 border-black px-6 py-2.5 hover:bg-black hover:text-white transition-colors"
+            style={{
+              ...mono,
+              fontSize: 12,
+              fontWeight: 700,
+              padding: '12px 32px',
+              border: '1px solid #000000',
+              borderRadius: 6,
+              background: 'rgba(0,0,0,0.03)',
+              color: '#000000',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              transition: 'all 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              margin: '0 auto',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#000000'; e.currentTarget.style.color = '#ffffff' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; e.currentTarget.style.color = '#000000' }}
           >
+            {/* Google icon */}
+            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, fill: 'currentColor' }}>
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
             Sign in with Google
           </button>
-          <p className="text-[10px] text-gray-400 mt-6 tracking-wider"
-             style={{ fontFamily: "'Space Mono', monospace" }}>
-            Access restricted to @vegarei.com accounts
-          </p>
+
+          {error && (
+            <div style={{ ...mono, fontSize: 11, color: '#e53e3e', marginTop: 16 }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ ...mono, fontSize: 10, color: '#a0a0a0', marginTop: 24 }}>
+            Restricted to @vegarei.com accounts
+          </div>
         </div>
       </div>
     )
