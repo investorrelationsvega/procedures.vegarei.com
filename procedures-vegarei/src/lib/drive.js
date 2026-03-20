@@ -332,6 +332,72 @@ export function getReviewStatus(lastReviewed, cadence) {
   return 'on-track'
 }
 
+// ── List files in a Drive folder ─────────────────────────────
+// Returns all non-trashed files in a folder (id, name, mimeType, modifiedTime).
+export async function listFolderFiles(folderId, token) {
+  const files = []
+  let pageToken = ''
+  do {
+    const q = `'${folderId}' in parents and trashed=false`
+    let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,mimeType,modifiedTime)&pageSize=100`
+    if (pageToken) url += `&pageToken=${pageToken}`
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) throw new Error(`Drive list failed: ${res.status}`)
+    const data = await res.json()
+    files.push(...(data.files || []))
+    pageToken = data.nextPageToken || ''
+  } while (pageToken)
+  return files
+}
+
+// ── Export a Google Doc as HTML ──────────────────────────────
+// Google Docs use a proprietary format — this exports to clean HTML.
+export async function exportGoogleDocAsHtml(fileId, token) {
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/html`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  if (!res.ok) throw new Error(`Drive export failed: ${res.status}`)
+  const html = await res.text()
+  // Google wraps export in full HTML doc — extract just the body content
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i)
+  return bodyMatch ? bodyMatch[1].trim() : html
+}
+
+// ── Find unindexed files in a company's Drive folder ─────────
+// Compares folder contents against the index to find files that
+// exist in Drive but don't have a corresponding SOP entry.
+export async function findUnindexedFiles(companySlug, index, token) {
+  const folderId = index?.folderIds?.[companySlug]
+  if (!folderId) return []
+
+  const files = await listFolderFiles(folderId, token)
+
+  // Build a set of known Drive file IDs from the index
+  const knownIds = new Set()
+  ;(index.sops || []).forEach(sop => {
+    if (sop.htmlFileId) knownIds.add(sop.htmlFileId)
+    if (sop.metaFileId) knownIds.add(sop.metaFileId)
+  })
+
+  // Filter to files not in the index and not meta.json files
+  const importable = files.filter(f => {
+    if (knownIds.has(f.id)) return false
+    if (f.name.endsWith('.meta.json')) return false
+    if (f.mimeType === 'application/vnd.google-apps.folder') return false
+    // Accept Google Docs, HTML, text, docx
+    const importableTypes = [
+      'application/vnd.google-apps.document',
+      'text/html',
+      'text/plain',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ]
+    return importableTypes.includes(f.mimeType) || f.name.match(/\.(html|txt|md|docx)$/i)
+  })
+
+  return importable
+}
+
 // ── Auto-generate SOP ID ────────────────────────────────────
 // Format: PREFIX-CODE-NNN (e.g. PE-INV-001)
 export function generateSopId(companySlug, categoryKey, existingSops) {

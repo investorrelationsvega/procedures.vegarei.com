@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex, getReviewStatus, getCompanyFolder, cacheFolderIds } from '../lib/drive'
+import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex, getReviewStatus, getCompanyFolder, cacheFolderIds, findUnindexedFiles } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import { DEFAULT_SOP_HTML } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
 import CreateSopDialog from '../components/CreateSopDialog'
+import ImportFromDrive from '../components/ImportFromDrive'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -60,6 +61,9 @@ export default function CompanySops() {
   const [creating, setCreating] = useState(false)
   const [activeFilter, setActiveFilter] = useState('all')
   const [sortBy, setSortBy] = useState('reviewed-desc')
+  const [unindexedFiles, setUnindexedFiles] = useState([])
+  const [showImport, setShowImport] = useState(false)
+  const [scanningDrive, setScanningDrive] = useState(false)
 
   const companyConfig = COMPANIES[company]
   const companyName = companyConfig?.label || company
@@ -84,6 +88,32 @@ export default function CompanySops() {
     }
     load()
   }, [token])
+
+  // Scan Drive folder for unindexed files when index loads
+  useEffect(() => {
+    if (!index || !token || !index.folderIds?.[company]) return
+    let cancelled = false
+    async function scan() {
+      setScanningDrive(true)
+      try {
+        const files = await findUnindexedFiles(company, index, token)
+        if (!cancelled) setUnindexedFiles(files)
+      } catch (err) {
+        console.error('Drive scan failed:', err)
+      } finally {
+        if (!cancelled) setScanningDrive(false)
+      }
+    }
+    scan()
+    return () => { cancelled = true }
+  }, [index, token, company])
+
+  const handleImported = useCallback((updatedIndex, sopId) => {
+    setIndex(updatedIndex)
+    setShowImport(false)
+    setUnindexedFiles(prev => prev.filter(f => f.id !== sopId))
+    navigate(`/sop/${sopId}`)
+  }, [navigate])
 
   const handleCreate = useCallback(async ({ sopId, title, category, owner, company: comp, reviewCadence, description, useAi }) => {
     if (!token) return
@@ -305,8 +335,20 @@ export default function CompanySops() {
             ))}
           </select>
 
-          {/* New SOP */}
-          <div className="ml-auto">
+          {/* Actions */}
+          <div className="ml-auto flex items-center gap-2">
+            {isAuthed && unindexedFiles.length > 0 && (
+              <button
+                onClick={() => setShowImport(true)}
+                className="text-[10px] font-mono uppercase tracking-wider border border-gray-200 text-[#797469] px-3 py-2 hover:border-black hover:text-black transition-colors flex items-center gap-1.5"
+              >
+                <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M8 3v7m0 0L5.5 7.5M8 10l2.5-2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M3 11v2h10v-2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Import ({unindexedFiles.length})
+              </button>
+            )}
             {isAuthed && (
               <button
                 onClick={() => setShowCreate(true)}
@@ -335,6 +377,28 @@ export default function CompanySops() {
             <div className="mb-6 flex items-start gap-3 px-4 py-3 border border-[#f5c542]/40 bg-[#fffbeb]">
               <span className="text-[#f5c542] mt-0.5">&#9888;</span>
               <span className="text-xs text-[#92400e]">{error}</span>
+            </div>
+          )}
+
+          {/* Unindexed files banner */}
+          {unindexedFiles.length > 0 && isAuthed && (
+            <div className="mb-6 flex items-center gap-3 px-4 py-3 border border-[#00d4ff]/30 bg-[#f0fbff]">
+              <span className="text-[#00d4ff] text-sm">&#9660;</span>
+              <div className="flex-1">
+                <span className="text-xs text-[#0c4a6e] font-medium">
+                  {unindexedFiles.length} new document{unindexedFiles.length !== 1 ? 's' : ''} found in Drive
+                </span>
+                <span className="text-[10px] text-[#0c4a6e]/60 ml-2">
+                  Not yet linked as procedures
+                </span>
+              </div>
+              <button
+                onClick={() => setShowImport(true)}
+                style={mono}
+                className="text-[10px] uppercase tracking-wider bg-black text-white px-4 py-1.5 hover:bg-[#27474D] transition-colors"
+              >
+                Review &amp; Import
+              </button>
             </div>
           )}
 
@@ -410,6 +474,17 @@ export default function CompanySops() {
           onSave={handleCreate}
           onCancel={() => setShowCreate(false)}
           loading={creating}
+        />
+      )}
+
+      {showImport && (
+        <ImportFromDrive
+          company={company}
+          files={unindexedFiles}
+          existingSops={companySops}
+          index={index}
+          onImported={handleImported}
+          onClose={() => setShowImport(false)}
         />
       )}
     </div>
