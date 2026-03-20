@@ -10,13 +10,15 @@ import TableHeader from '@tiptap/extension-table-header'
 import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
-  saveSopHtml, saveSopMeta, updateIndex,
-  bumpVersion, CATEGORIES,
+  saveSopHtml, saveSopMeta, updateIndex, updateSopInIndex,
+  bumpVersion, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
 } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import EditorToolbar from '../components/EditorToolbar'
 import HistoryPanel from '../components/HistoryPanel'
 import SaveDialog from '../components/SaveDialog'
+import VegaStar from '../components/VegaStar'
+
 
 export default function SopView() {
   const { id } = useParams()
@@ -33,6 +35,7 @@ export default function SopView() {
   const [saving, setSaving]         = useState(false)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(null)
+
 
   // TipTap editor
   const editor = useEditor({
@@ -105,7 +108,7 @@ export default function SopView() {
       const newRevision = {
         version: newVersion,
         date: new Date().toISOString().split('T')[0],
-        author: user?.name || user?.email || 'J Jones',
+        author: user?.name || user?.email || 'Unknown User',
         summary,
         htmlSnapshot: updatedHtml,
       }
@@ -145,6 +148,81 @@ export default function SopView() {
     setEditing(true)
   }, [editor])
 
+  // Mark review as complete — resets the review clock
+  const handleCompleteReview = useCallback(async () => {
+    if (!sopEntry || !token || !index) return
+    setSaving(true)
+    try {
+      const now = new Date().toISOString().split('T')[0]
+
+      // Log review event in audit trail
+      const event = {
+        action: 'review-completed',
+        date: new Date().toISOString(),
+        user: user?.name || user?.email || 'Unknown User',
+        email: user?.email || '',
+      }
+      const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+
+      // Update index: reset lastReviewed, set status to active
+      const updatedIndex = await updateSopInIndex(index, sopEntry.id, {
+        lastReviewed: now,
+        status: 'active',
+      }, token)
+
+      setMeta(updatedMeta)
+      setIndex(updatedIndex)
+      setSopEntry(prev => ({ ...prev, lastReviewed: now, status: 'active' }))
+    } catch (err) {
+      console.error(err)
+      alert('Failed to complete review. Check Drive permissions.')
+    } finally {
+      setSaving(false)
+    }
+  }, [sopEntry, token, index, meta, user])
+
+  const handlePrint = useCallback(async () => {
+    // Log to audit trail
+    if (sopEntry?.metaFileId && token) {
+      const event = {
+        action: 'print',
+        date: new Date().toISOString(),
+        user: user?.name || user?.email || 'Unknown User',
+        email: user?.email || '',
+      }
+      const updated = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+      setMeta(updated)
+    }
+    window.print()
+  }, [sopEntry, token, meta, user])
+
+  const handleDownload = useCallback(async () => {
+    // Log to audit trail
+    if (sopEntry?.metaFileId && token) {
+      const event = {
+        action: 'download',
+        date: new Date().toISOString(),
+        user: user?.name || user?.email || 'Unknown User',
+        email: user?.email || '',
+      }
+      const updated = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+      setMeta(updated)
+    }
+    // Create downloadable HTML file
+    const fullHtml = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${sopEntry?.title || id}</title>
+<style>body{font-family:Inter,system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a1a1a}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding:8px 12px;text-align:left}</style>
+</head><body>${html}</body></html>`
+    const blob = new Blob([fullHtml], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${sopEntry?.id || id}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [sopEntry, token, meta, user, html, id])
+
   const cat = sopEntry ? CATEGORIES[sopEntry.category] : null
 
   return (
@@ -171,6 +249,23 @@ export default function SopView() {
               <span className="font-mono text-[10px] text-[#566F69]">
                 v{sopEntry.version} · {sopEntry.lastReviewed}
               </span>
+            )}
+
+            {isAuthed && !editing && sopEntry && (
+              <>
+                <button
+                  onClick={handlePrint}
+                  className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors"
+                >
+                  Print
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors"
+                >
+                  Download
+                </button>
+              </>
             )}
 
             {meta && (
@@ -210,6 +305,46 @@ export default function SopView() {
           </div>
         </div>
       </div>
+
+      {/* Review notification banner */}
+      {sopEntry && (() => {
+        const reviewStatus = getReviewStatus(sopEntry.lastReviewed, sopEntry.reviewCadence)
+        const cadence = REVIEW_CADENCES[sopEntry.reviewCadence]
+        if (reviewStatus === 'on-track' || !cadence) return null
+        return (
+          <div className={`border-b ${reviewStatus === 'overdue' ? 'bg-[#fffbeb] border-[#f5c542]/30' : 'bg-[#fff7ed] border-[#f97316]/20'}`}>
+            <div className="max-w-screen-xl mx-auto px-8 py-2.5 flex items-center gap-3">
+              <VegaStar size={16} glowing={reviewStatus === 'overdue'} />
+              <span className="text-xs text-[#92400e]">
+                {reviewStatus === 'overdue'
+                  ? `This SOP is overdue for its ${cadence.label.toLowerCase()} review.`
+                  : `This SOP is due for its ${cadence.label.toLowerCase()} review soon.`
+                }
+              </span>
+              {isAuthed && !editing && (
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="text-[10px] font-mono uppercase tracking-wider border border-[#f5c542] text-[#92400e] px-3 py-1 hover:bg-[#f5c542]/20 transition-colors"
+                  >
+                    Edit & Review
+                  </button>
+                  <button
+                    onClick={handleCompleteReview}
+                    disabled={saving}
+                    className="text-[10px] font-mono uppercase tracking-wider bg-[#f5c542] text-black px-3 py-1 hover:bg-[#e5b532] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {saving ? (
+                      <span className="w-2.5 h-2.5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    ) : null}
+                    Mark Review Complete
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Edit toolbar */}
       {editing && <EditorToolbar editor={editor} />}
@@ -264,6 +399,7 @@ export default function SopView() {
           loading={saving}
         />
       )}
+
     </div>
   )
 }

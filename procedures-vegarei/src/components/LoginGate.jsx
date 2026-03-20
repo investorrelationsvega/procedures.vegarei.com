@@ -1,40 +1,51 @@
-import { useState } from 'react'
-import { useGoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../lib/auth'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
+const logoStyle = { width: 48, height: 75, fill: '#a0a0a0', marginBottom: 24, opacity: 0.4, display: 'block', margin: '0 auto 24px' }
+
+const loadingBarKeyframes = `
+@keyframes loadingProgress {
+  0% { width: 0%; }
+  20% { width: 25%; }
+  50% { width: 60%; }
+  80% { width: 85%; }
+  100% { width: 95%; }
+}
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+`
+
+const VegaLogo = () => (
+  <svg viewBox="0 0 366 576" style={logoStyle}>
+    <path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z" />
+    <path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z" />
+  </svg>
+)
+
 export default function LoginGate({ children }) {
   const { isAuthed, loading, login } = useAuth()
-  const [signingIn, setSigningIn] = useState(false)
-  const [error, setError] = useState(null)
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: (res) => {
-      setSigningIn(true)
-      setError(null)
-      login(res)
-    },
-    onError: () => {
-      setError('Sign-in failed. Please try again.')
-      setSigningIn(false)
-    },
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly openid email profile',
-  })
-
-  // Loading / auto-connecting state
-  if (loading || signingIn) {
+  // Loading state (checking for redirect token)
+  if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff' }}>
+        <style>{loadingBarKeyframes}</style>
         <div className="grid-bg" />
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          {/* Vega V + Star */}
-          <svg viewBox="0 0 366 576" style={{ width: 48, height: 75, fill: '#a0a0a0', marginBottom: 24, opacity: 0.4 }}>
-            <path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z" />
-            <path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z" />
-          </svg>
-          <div style={{ ...mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#27474D', marginTop: 8 }}>
-            Connecting…
+          <VegaLogo />
+          <div style={{ ...mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#27474D', marginTop: 8, animation: 'loadingPulse 2s ease-in-out infinite' }}>
+            Signing in…
+          </div>
+          <div style={{ width: 200, height: 2, background: 'rgba(0,0,0,0.08)', borderRadius: 1, margin: '20px auto 0', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              background: '#27474D',
+              borderRadius: 1,
+              animation: 'loadingProgress 8s ease-out forwards',
+            }} />
           </div>
         </div>
       </div>
@@ -47,11 +58,7 @@ export default function LoginGate({ children }) {
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff' }}>
         <div className="grid-bg" />
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          {/* Vega V + Star */}
-          <svg viewBox="0 0 366 576" style={{ width: 48, height: 75, fill: '#a0a0a0', marginBottom: 24, opacity: 0.4 }}>
-            <path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z" />
-            <path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z" />
-          </svg>
+          <VegaLogo />
 
           <div style={{ ...mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#27474D', marginBottom: 12 }}>
             Vega Companies
@@ -62,7 +69,7 @@ export default function LoginGate({ children }) {
           </h1>
 
           <button
-            onClick={() => googleLogin()}
+            onClick={() => login()}
             style={{
               ...mono,
               fontSize: 12,
@@ -93,12 +100,6 @@ export default function LoginGate({ children }) {
             </svg>
             Sign in with Google
           </button>
-
-          {error && (
-            <div style={{ ...mono, fontSize: 11, color: '#e53e3e', marginTop: 16 }}>
-              {error}
-            </div>
-          )}
 
           <div style={{ ...mono, fontSize: 10, color: '#a0a0a0', marginTop: 24 }}>
             Restricted to @vegarei.com accounts
