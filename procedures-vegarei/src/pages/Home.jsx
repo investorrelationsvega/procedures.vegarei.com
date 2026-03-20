@@ -36,10 +36,10 @@ function CompanyCard({ company, onClick }) {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#27474D', display: 'inline-block' }} />
-          <span style={{ ...mono, fontSize: 10, color: '#a0a0a0', letterSpacing: '0.05em' }}>{company.num}</span>
+          <span style={{ ...mono, fontSize: 10, color: '#707070', letterSpacing: '0.05em' }}>{company.num}</span>
         </div>
         <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: '#000000', marginBottom: 4 }}>{company.label}</div>
-        <div style={{ ...mono, fontSize: 11, color: '#a0a0a0' }}>{company.desc}</div>
+        <div style={{ ...mono, fontSize: 11, color: '#707070' }}>{company.desc}</div>
       </div>
       <div style={{ ...mono, fontSize: 11, color: '#27474D', marginTop: 16 }}>
         Enter &rarr;
@@ -58,7 +58,7 @@ export default function Home() {
       {/* Hero */}
       <div style={{ textAlign: 'center', padding: '60px 20px 40px', position: 'relative', zIndex: 1 }}>
         {/* V + Star logo */}
-        <svg viewBox="0 0 366 576" style={{ width: 40, height: 62, fill: '#a0a0a0', display: 'block', margin: '0 auto 24px', opacity: 0.4 }}>
+        <svg viewBox="0 0 366 576" style={{ width: 40, height: 62, fill: '#707070', display: 'block', margin: '0 auto 24px', opacity: 0.4 }}>
           <path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z" />
           <path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z" />
         </svg>
@@ -71,7 +71,7 @@ export default function Home() {
           Procedures
         </h1>
 
-        <div style={{ ...mono, fontSize: 11, color: '#a0a0a0', letterSpacing: '0.05em' }}>
+        <div style={{ ...mono, fontSize: 11, color: '#707070', letterSpacing: '0.05em' }}>
           Performance &nbsp;&loz;&nbsp; Partnership &nbsp;&loz;&nbsp; Prosperity
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function Home() {
       <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%', padding: '0 32px', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '20px 0 28px' }}>
           <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.1)' }} />
-          <span style={{ ...mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#a0a0a0' }}>
+          <span style={{ ...mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#707070' }}>
             Business Units
           </span>
           <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.1)' }} />
@@ -98,10 +98,10 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={{ maxWidth: 1100, margin: '0 auto', width: '100%', padding: '40px 32px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-        <span style={{ ...mono, fontSize: 10, color: '#a0a0a0' }}>
+        <span style={{ ...mono, fontSize: 10, color: '#707070' }}>
           Vega &copy; {new Date().getFullYear()}
         </span>
-        <span style={{ ...mono, fontSize: 10, color: '#a0a0a0' }}>
+        <span style={{ ...mono, fontSize: 10, color: '#707070' }}>
           System Status: Operational
         </span>
       </footer>
