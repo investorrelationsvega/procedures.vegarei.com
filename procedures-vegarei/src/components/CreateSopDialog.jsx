@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { CATEGORIES, COMPANIES, REVIEW_CADENCES, generateSopId } from '../lib/drive'
+import { parseUploadedFile } from '../lib/fileParser'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -20,9 +21,16 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
   const [customLabel, setCustomLabel] = useState('')
   const [customCode, setCustomCode] = useState('')
 
-  // Step 2: process description
+  // Step 2: mode — 'ai' | 'blank' | 'upload'
+  const [mode, setMode] = useState('ai')
   const [description, setDescription] = useState('')
-  const [useAi, setUseAi] = useState(true)
+
+  // Upload state
+  const [uploadedFile, setUploadedFile] = useState(null)
+  const [uploadedText, setUploadedText] = useState('')
+  const [uploadError, setUploadError] = useState('')
+  const [parsing, setParsing] = useState(false)
+  const fileInputRef = useRef(null)
 
   // Get categories for this business unit + any custom ones from existing SOPs
   const companyConfig = COMPANIES[company]
@@ -49,7 +57,11 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
   }, [company, category, existingSops])
 
   const canProceed = title.trim() && category
-  const canGenerate = useAi ? description.trim().length > 0 : true
+  const canGenerate = mode === 'ai'
+    ? description.trim().length > 0
+    : mode === 'upload'
+      ? uploadedText.trim().length > 0
+      : true
 
   const handleAddCustom = () => {
     if (!customLabel.trim() || !customCode.trim()) return
@@ -65,6 +77,28 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
     setCustomCode('')
   }
 
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError('')
+    setUploadedFile(file)
+    setParsing(true)
+    try {
+      const text = await parseUploadedFile(file)
+      setUploadedText(text)
+      // Auto-fill title from filename if title is empty
+      if (!title) {
+        const name = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')
+        setTitle(name.charAt(0).toUpperCase() + name.slice(1))
+      }
+    } catch (err) {
+      setUploadError(err.message)
+      setUploadedText('')
+    } finally {
+      setParsing(false)
+    }
+  }
+
   const handleSubmit = () => {
     onSave({
       sopId,
@@ -73,8 +107,8 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
       owner: owner.trim(),
       company,
       reviewCadence,
-      description: useAi ? description.trim() : '',
-      useAi,
+      description: mode === 'ai' ? description.trim() : mode === 'upload' ? uploadedText.trim() : '',
+      useAi: mode !== 'blank',
     })
   }
 
@@ -249,32 +283,23 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
               <span className="text-xs text-[#566F69] truncate">{title}</span>
             </div>
 
-            {/* Mode toggle */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setUseAi(true)}
-                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-mono border transition-colors ${
-                  useAi
-                    ? 'bg-black text-white border-black'
-                    : 'border-gray-200 text-[#797469] hover:border-black'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: useAi ? '#22c55e' : '#797469' }} />
+            {/* Mode toggle — 3 options */}
+            <div className="flex gap-1.5">
+              <ModeButton active={mode === 'ai'} onClick={() => setMode('ai')}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: mode === 'ai' ? '#22c55e' : '#797469' }} />
                 Generate with AI
-              </button>
-              <button
-                onClick={() => setUseAi(false)}
-                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-mono border transition-colors ${
-                  !useAi
-                    ? 'bg-black text-white border-black'
-                    : 'border-gray-200 text-[#797469] hover:border-black'
-                }`}
-              >
+              </ModeButton>
+              <ModeButton active={mode === 'upload'} onClick={() => setMode('upload')}>
+                <UploadIcon active={mode === 'upload'} />
+                Upload Document
+              </ModeButton>
+              <ModeButton active={mode === 'blank'} onClick={() => setMode('blank')}>
                 Blank Template
-              </button>
+              </ModeButton>
             </div>
 
-            {useAi ? (
+            {/* AI mode */}
+            {mode === 'ai' && (
               <>
                 <Field label="Describe the Process">
                   <textarea
@@ -287,20 +312,101 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                   />
                 </Field>
 
-                <div className="bg-gray-50 border border-gray-200 px-4 py-3">
-                  <p style={mono} className="text-[9px] uppercase tracking-widest text-[#566F69] mb-2">
-                    The generated SOP will include
-                  </p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1">
-                    {['Purpose', 'Scope', 'Definitions', 'Responsibilities', 'Procedure', 'Related Documents', 'Revision History'].map(s => (
-                      <span key={s} className="text-[11px] text-[#566F69] flex items-center gap-1.5">
-                        <span className="text-[#22c55e]">&#10003;</span> {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                <SectionPreview />
               </>
-            ) : (
+            )}
+
+            {/* Upload mode */}
+            {mode === 'upload' && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".docx,.doc,.txt,.md"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                {!uploadedFile ? (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-gray-300 hover:border-black transition-colors py-10 flex flex-col items-center gap-3 group"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-8 h-8 text-gray-300 group-hover:text-black transition-colors" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M12 16V4m0 0L8 8m4-4l4 4" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <div className="text-center">
+                      <p className="text-xs font-mono text-[#797469] group-hover:text-black transition-colors">
+                        Click to upload a document
+                      </p>
+                      <p className="text-[10px] font-mono text-gray-400 mt-1">
+                        .docx, .doc, .txt, .md
+                      </p>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    {/* File info */}
+                    <div className="bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#27474D]" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <div>
+                          <p className="text-xs font-mono text-black">{uploadedFile.name}</p>
+                          <p className="text-[10px] text-[#797469]">
+                            {(uploadedFile.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setUploadedFile(null)
+                          setUploadedText('')
+                          setUploadError('')
+                          if (fileInputRef.current) fileInputRef.current.value = ''
+                        }}
+                        className="text-[10px] font-mono text-[#797469] hover:text-black transition-colors px-2 py-1 border border-gray-200 hover:border-black"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    {parsing && (
+                      <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200">
+                        <span className="w-3 h-3 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
+                        <span className="text-xs text-[#797469]">Parsing document...</span>
+                      </div>
+                    )}
+
+                    {uploadError && (
+                      <div className="bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700">
+                        {uploadError}
+                      </div>
+                    )}
+
+                    {uploadedText && !parsing && (
+                      <>
+                        {/* Preview of extracted text */}
+                        <Field label={`Extracted Content (${uploadedText.split(/\n/).length} lines)`}>
+                          <div className="border border-gray-200 bg-gray-50 px-3 py-2 max-h-40 overflow-y-auto">
+                            <pre className="text-[11px] text-[#566F69] whitespace-pre-wrap font-mono leading-relaxed">
+                              {uploadedText.slice(0, 2000)}{uploadedText.length > 2000 ? '\n…' : ''}
+                            </pre>
+                          </div>
+                        </Field>
+
+                        <SectionPreview label="The uploaded content will be reformatted into" />
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Blank mode */}
+            {mode === 'blank' && (
               <div className="bg-gray-50 border border-gray-200 px-4 py-4">
                 <p className="text-xs text-[#566F69] mb-1">
                   A blank SOP will be created with the standard Vega template sections.
@@ -354,10 +460,12 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                 {loading ? (
                   <>
                     <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    {useAi ? 'Generating…' : 'Creating…'}
+                    {mode === 'blank' ? 'Creating…' : 'Formatting…'}
                   </>
                 ) : (
-                  useAi ? 'Generate SOP' : 'Create SOP'
+                  mode === 'ai' ? 'Generate SOP'
+                    : mode === 'upload' ? 'Format & Create SOP'
+                    : 'Create SOP'
                 )}
               </button>
             )}
@@ -367,6 +475,8 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
     </div>
   )
 }
+
+// ── Shared sub-components ──────────────────────────────────
 
 function Field({ label, children }) {
   return (
@@ -392,5 +502,47 @@ function StepDot({ active, done, label }) {
     >
       {done ? '✓' : label}
     </span>
+  )
+}
+
+function ModeButton({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex items-center justify-center gap-2 px-2 py-2.5 text-[10px] font-mono border transition-colors ${
+        active
+          ? 'bg-black text-white border-black'
+          : 'border-gray-200 text-[#797469] hover:border-black'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function UploadIcon({ active }) {
+  return (
+    <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M8 10V3m0 0L5.5 5.5M8 3l2.5 2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 11v2h10v-2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function SectionPreview({ label = 'The generated SOP will include' }) {
+  const mono = { fontFamily: "'Space Mono', monospace" }
+  return (
+    <div className="bg-gray-50 border border-gray-200 px-4 py-3">
+      <p style={mono} className="text-[9px] uppercase tracking-widest text-[#566F69] mb-2">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
+        {['Purpose', 'Scope', 'Definitions', 'Responsibilities', 'Procedure', 'Related Documents', 'Revision History'].map(s => (
+          <span key={s} className="text-[11px] text-[#566F69] flex items-center gap-1.5">
+            <span className="text-[#22c55e]">&#10003;</span> {s}
+          </span>
+        ))}
+      </div>
+    </div>
   )
 }
