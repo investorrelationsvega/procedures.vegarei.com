@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 220" fill="#3D3D3D">
+  <!-- 4-pointed star -->
+  <path d="M80 0 Q90 30 94 42 Q90 54 80 72 Q70 54 66 42 Q70 30 80 0Z"/>
+  <!-- V shape (left arm + right arm + bottom point) -->
+  <path d="
+    M8 48 L66 48
+    Q70 54 76 64 L80 72
+    Q84 64 90 54 Q94 48 94 48 L152 48
+    L88 210 Q84 218 80 218 Q76 218 72 210
+    Z
+  "/>
+</svg>
