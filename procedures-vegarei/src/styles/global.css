@@ -123,6 +123,19 @@
 
 .sop-document li { margin-bottom: 0.3rem; }
 
+/* ── Home Grid ───────────────────────────────────────────── */
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .home-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+  .home-grid { grid-template-columns: 1fr; }
+}
+
 /* ── TipTap Editor ────────────────────────────────────────── */
 .tiptap-editor {
   outline: none;
