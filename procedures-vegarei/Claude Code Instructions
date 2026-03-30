@@ -1,0 +1,141 @@
+# Vega Procedures Site — Claude Code Instructions
+
+## What this project is
+procedures.vegarei.com is Vega REI's internal SOP library. React + Vite, deployed on Netlify, Google Drive as the content backend. SOPs are stored as HTML files in Google Drive. The site fetches and renders them with Vega branding applied via CSS (Inter typeface, Vega color palette). Users log in via Google OAuth.
+
+## What already exists (do not touch unless specified)
+- `src/` — existing components, routing, and SOP rendering logic
+- `_index.json` — SOP registry in Drive root folder
+- `.meta.json` files — per-SOP version metadata
+- `netlify.toml` — COOP header already configured for Google OAuth popup
+- `vite.config.js`, `tailwind.config.js`, `postcss.config.js` — do not modify
+- Drive folder structure: `Vega Fund Administration — SOPs/` (ID: `1ERQzcaCNdBkhHQUj24LYLCrUB9Pdp7vz`) with category subfolders
+
+## What needs to be built
+
+### 1. Environment variable
+Ensure `.env.local` contains:
+```
+VITE_GOOGLE_CLIENT_ID=704239510255-9qguah5joljke1p6k5480nj1omcc4o47.apps.googleusercontent.com
+VITE_DRIVE_INDEX_FILE_ID=<the file ID of _index.json in Drive — leave as placeholder if not yet known>
+```
+
+### 2. Google OAuth sign-in (`src/auth/useGoogleAuth.js`)
+Create a custom React hook that:
+- Loads the Google Identity Services script (`accounts.google.com/gsi/client`)
+- Initializes the OAuth client using `VITE_GOOGLE_CLIENT_ID`
+- Requests scopes: `openid email profile https://www.googleapis.com/auth/drive.file`
+- Exposes: `{ user, accessToken, signIn, signOut, isAuthenticated }`
+- Stores the access token in memory only (never localStorage)
+- `user` should contain: `name`, `email`, `picture` from the Google ID token
+- On sign-in, opens the Google popup flow
+- On sign-out, revokes the token and clears state
+
+### 3. Auth gate (`src/auth/AuthGate.jsx`)
+A wrapper component that:
+- If not authenticated: shows a centered Vega-branded sign-in screen with the Google sign-in button
+- Uses Inter font, Vega dark navy background (`#0a0f1e`), white card, gold accent (`#c9a84c`)
+- Displays the Vega logo from `public/` if present, otherwise just "Vega Procedures" as text
+- If authenticated: renders `{children}`
+- Shows the signed-in user's name and a sign-out button in the top-right corner of the shell
+
+### 4. Drive read/write service (`src/services/driveService.js`)
+A service module (not a React component) that exports:
+
+```js
+// Fetch the raw HTML content of a file from Drive by file ID
+export async function fetchFileContent(fileId, accessToken)
+
+// Save updated HTML content back to a file in Drive by file ID
+export async function saveFileContent(fileId, htmlContent, accessToken)
+
+// Fetch and parse _index.json from Drive
+export async function fetchIndex(indexFileId, accessToken)
+```
+
+Implementation notes:
+- Use the Drive API v3 endpoint: `https://www.googleapis.com/drive/v3/files/{fileId}?alt=media`
+- For saves, use a multipart PATCH to `https://www.googleapis.com/upload/drive/v3/files/{fileId}?uploadType=multipart`
+- Always pass `Authorization: Bearer {accessToken}` header
+- Handle 401 errors gracefully — surface a "Session expired, please sign in again" message
+
+### 5. Rich text editor component (`src/components/SOPEditor.jsx`)
+A component that:
+- Accepts props: `{ fileId, title, accessToken, onClose }`
+- On mount: fetches the current HTML content via `driveService.fetchFileContent`
+- Renders a **contentEditable** div (do not use a heavy editor library — keep it native)
+- Supported formatting via a minimal toolbar above the editor:
+  - Heading 1, Heading 2, Heading 3 (maps to `<h1>`, `<h2>`, `<h3>`)
+  - Bold, Italic
+  - Bullet list, Numbered list
+  - Simple table insert (3x3 default)
+  - Undo / Redo
+- Toolbar uses `document.execCommand` for basic formatting
+- On **Save**: calls `driveService.saveFileContent` with the current innerHTML, shows a saving spinner, then a "Saved" confirmation
+- On **Cancel**: confirms if there are unsaved changes, then calls `onClose`
+- Styling:
+  - Inter font throughout
+  - White background editor area with subtle border
+  - Vega navy toolbar (`#0a0f1e`) with white icon buttons
+  - Max width 860px, centered
+  - `h1` → 28px, `h2` → 22px, `h3` → 18px, body → 15px, line-height 1.7
+  - The Vega branding is in the shell/toolbar, NOT embedded into the document HTML itself
+
+### 6. Edit button on SOP view pages
+On each SOP detail/view page, add an **Edit** button (visible only when authenticated) that:
+- Opens `SOPEditor` as a full-screen overlay or replaces the view pane
+- After save, refreshes the rendered SOP content from Drive without a full page reload
+
+### 7. Audit trail (`src/components/AuditLog.jsx`)
+A simple component that:
+- Accepts `{ sopId, accessToken }`
+- Calls the Drive API v3 revisions endpoint: `https://www.googleapis.com/drive/v3/files/{fileId}/revisions`
+- Renders a list of revisions showing: revision number, modified time, last modifying user name and email
+- Styled as a clean table with Inter font, alternating row shading
+- Accessible from a "Version History" button on the SOP view page
+
+---
+
+## Styling constraints (apply globally)
+- Font: Inter (already in project or load from Google Fonts)
+- Primary background: `#0a0f1e`
+- Accent / gold: `#c9a84c`
+- Text on dark: `#ffffff`
+- Text on light: `#1a1a2e`
+- Card/surface: `#ffffff`
+- Border radius: `8px`
+- Do NOT embed custom fonts or colors inside the HTML content of SOPs — branding is applied by the site stylesheet only
+
+---
+
+## Drive folder reference
+- SOP root folder ID: `1ERQzcaCNdBkhHQUj24LYLCrUB9Pdp7vz`
+- Subfolder structure:
+  - `01_Legal_Formation/`
+  - `02_Investor_Relations/`
+  - `03_Compliance/`
+  - `04_Tax_Reporting/`
+  - `05_Operations/`
+  - `06_Marketing/`
+  - `07_Technology/`
+
+---
+
+## What NOT to do
+- Do not add Supabase, Firebase, or any new third-party services
+- Do not add TipTap, Quill, ProseMirror, or any heavy editor library — use native contentEditable
+- Do not store access tokens in localStorage or sessionStorage
+- Do not embed the Client Secret anywhere in frontend code
+- Do not modify the existing Drive folder structure or `_index.json` schema
+- Do not change the Netlify, Vite, Tailwind, or PostCSS config files
+
+---
+
+## How to test locally
+```bash
+npm install
+cp .env.example .env.local
+# Add VITE_GOOGLE_CLIENT_ID and VITE_DRIVE_INDEX_FILE_ID to .env.local
+npm run dev
+```
+Site runs at http://localhost:5173
