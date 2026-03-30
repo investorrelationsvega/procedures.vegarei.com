@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
-  saveSopMeta, updateIndex, updateSopInIndex,
-  bumpVersion, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
+  updateSopInIndex, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
 } from '../lib/drive'
 import { fetchDocContent } from '../services/docsService'
 import { MOCK_INDEX } from '../lib/mockData'
 import HistoryPanel from '../components/HistoryPanel'
-import SaveDialog from '../components/SaveDialog'
 import SOPEditor from '../components/SOPEditor'
 import AuditLog from '../components/AuditLog'
 import VegaStar from '../components/VegaStar'
@@ -18,7 +16,6 @@ import VegaStar from '../components/VegaStar'
 export default function SopView() {
   const { id } = useParams()
   const { token, user, isAuthed } = useAuth()
-  const navigate = useNavigate()
 
   const [sopEntry, setSopEntry]     = useState(null)
   const [html, setHtml]             = useState('')
@@ -27,7 +24,6 @@ export default function SopView() {
   const [editing, setEditing]       = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showAuditLog, setShowAuditLog] = useState(false)
-  const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [saving, setSaving]         = useState(false)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(null)
@@ -53,7 +49,6 @@ export default function SopView() {
           try {
             h = await fetchDocContent(entry.htmlFileId, token)
           } catch {
-            // Fallback: load as raw HTML file (for legacy SOPs)
             h = await loadSopHtml(entry.htmlFileId, token)
           }
           const m = entry.metaFileId ? await loadSopMeta(entry.metaFileId, token) : null
@@ -78,7 +73,6 @@ export default function SopView() {
   // Called when SOPEditor overlay closes after a save
   const handleEditorClose = useCallback(async () => {
     setEditing(false)
-    // Refresh rendered content from the doc without full page reload
     if (sopEntry?.htmlFileId && token) {
       try {
         let h
@@ -94,7 +88,6 @@ export default function SopView() {
     }
   }, [sopEntry, token])
 
-  // Mark review as complete — resets the review clock
   const handleCompleteReview = useCallback(async () => {
     if (!sopEntry || !token || !index) return
     setSaving(true)
@@ -174,11 +167,11 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs font-mono text-[#797469]">
             <Link to="/" className="hover:text-black transition-colors">Procedures</Link>
-            <span>›</span>
+            <span>&rsaquo;</span>
             {cat && (
               <>
                 <span style={{ color: cat.color }}>{cat.label}</span>
-                <span>›</span>
+                <span>&rsaquo;</span>
               </>
             )}
             <span className="text-black font-bold">{id}</span>
@@ -188,7 +181,7 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
           <div className="flex items-center gap-3">
             {sopEntry && (
               <span className="font-mono text-[10px] text-[#566F69]">
-                v{sopEntry.version} · {sopEntry.lastReviewed}
+                v{sopEntry.version} &middot; {sopEntry.lastReviewed}
               </span>
             )}
 
@@ -283,7 +276,7 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
       <div className="max-w-screen-xl mx-auto px-8 py-10">
         <div className="max-w-3xl">
           {loading && (
-            <p className="font-mono text-sm text-[#566F69]">Loading…</p>
+            <p className="font-mono text-sm text-[#566F69]">Loading&hellip;</p>
           )}
 
           {error && (
