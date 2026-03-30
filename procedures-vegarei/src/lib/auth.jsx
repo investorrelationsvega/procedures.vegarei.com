@@ -1,10 +1,13 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { googleLogout } from '@react-oauth/google'
 
 const AuthContext = createContext(null)
 
 const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents openid email profile'
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+
+function revokeToken(accessToken) {
+  fetch(`https://oauth2.googleapis.com/revoke?token=${accessToken}`, { method: 'POST' }).catch(() => {})
+}
 
 export function AuthProvider({ children }) {
   const [token, setToken]   = useState(null)
@@ -42,7 +45,7 @@ export function AuthProvider({ children }) {
 
       if (!profile.email?.endsWith('@vegarei.com')) {
         alert('Access restricted to @vegarei.com accounts.')
-        googleLogout()
+        revokeToken(accessToken)
         return
       }
 
@@ -69,10 +72,10 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
-    googleLogout()
+    if (token) revokeToken(token)
     setToken(null)
     setUser(null)
-  }, [])
+  }, [token])
 
   return (
     <AuthContext.Provider value={{ token, user, login: initiateLogin, logout, loading, isAuthed: !!token }}>

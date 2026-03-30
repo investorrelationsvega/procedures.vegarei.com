@@ -136,14 +136,6 @@
   .home-grid { grid-template-columns: 1fr; }
 }
 
-/* ── TipTap Editor ────────────────────────────────────────── */
-.tiptap-editor {
-  outline: none;
-  min-height: 600px;
-}
-
-.tiptap-editor:focus { outline: none; }
-
 /* ── Animations ─────────────────────────────────────────── */
 @keyframes spin {
   to { transform: rotate(360deg); }
