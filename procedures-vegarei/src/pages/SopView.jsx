@@ -1,22 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
-import Table from '@tiptap/extension-table'
-import TableRow from '@tiptap/extension-table-row'
-import TableCell from '@tiptap/extension-table-cell'
-import TableHeader from '@tiptap/extension-table-header'
 import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
-  saveSopHtml, saveSopMeta, updateIndex, updateSopInIndex,
+  saveSopMeta, updateIndex, updateSopInIndex,
   bumpVersion, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
 } from '../lib/drive'
+import { fetchDocContent } from '../services/docsService'
 import { MOCK_INDEX } from '../lib/mockData'
-import EditorToolbar from '../components/EditorToolbar'
 import HistoryPanel from '../components/HistoryPanel'
 import SaveDialog from '../components/SaveDialog'
+import SOPEditor from '../components/SOPEditor'
+import AuditLog from '../components/AuditLog'
 import VegaStar from '../components/VegaStar'
 
 
@@ -31,27 +26,11 @@ export default function SopView() {
   const [index, setIndex]           = useState(null)
   const [editing, setEditing]       = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showAuditLog, setShowAuditLog] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [saving, setSaving]         = useState(false)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(null)
-
-
-  // TipTap editor
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableHeader,
-      TableCell,
-    ],
-    content: '',
-    editorProps: {
-      attributes: { class: 'tiptap-editor sop-document px-8 py-8 focus:outline-none' },
-    },
-  })
 
   // Load SOP data
   useEffect(() => {
@@ -69,10 +48,15 @@ export default function SopView() {
         setSopEntry(entry)
 
         if (entry.htmlFileId && token) {
-          const [h, m] = await Promise.all([
-            loadSopHtml(entry.htmlFileId, token),
-            entry.metaFileId ? loadSopMeta(entry.metaFileId, token) : Promise.resolve(null),
-          ])
+          // Try loading as Google Doc first, fall back to raw HTML
+          let h
+          try {
+            h = await fetchDocContent(entry.htmlFileId, token)
+          } catch {
+            // Fallback: load as raw HTML file (for legacy SOPs)
+            h = await loadSopHtml(entry.htmlFileId, token)
+          }
+          const m = entry.metaFileId ? await loadSopMeta(entry.metaFileId, token) : null
           setHtml(h)
           setMeta(m)
         } else {
@@ -91,62 +75,24 @@ export default function SopView() {
     load()
   }, [id, token])
 
-  // Sync HTML to editor when entering edit mode
-  useEffect(() => {
-    if (editing && editor && html) {
-      editor.commands.setContent(html)
-    }
-  }, [editing, editor])
-
-  const handleSave = useCallback(async ({ summary, versionType }) => {
-    if (!sopEntry || !token) return
-    setSaving(true)
-    try {
-      const newVersion = bumpVersion(sopEntry.version, versionType)
-      const updatedHtml = editor.getHTML()
-
-      const newRevision = {
-        version: newVersion,
-        date: new Date().toISOString().split('T')[0],
-        author: user?.name || user?.email || 'Unknown User',
-        summary,
-        htmlSnapshot: updatedHtml,
+  // Called when SOPEditor overlay closes after a save
+  const handleEditorClose = useCallback(async () => {
+    setEditing(false)
+    // Refresh rendered content from the doc without full page reload
+    if (sopEntry?.htmlFileId && token) {
+      try {
+        let h
+        try {
+          h = await fetchDocContent(sopEntry.htmlFileId, token)
+        } catch {
+          h = await loadSopHtml(sopEntry.htmlFileId, token)
+        }
+        setHtml(h)
+      } catch (err) {
+        console.error('Failed to refresh content:', err)
       }
-
-      const updatedMeta = {
-        ...(meta || { id: sopEntry.id }),
-        currentVersion: newVersion,
-        revisions: [newRevision, ...(meta?.revisions || [])],
-      }
-
-      await Promise.all([
-        saveSopHtml(sopEntry.htmlFileId, updatedHtml, token),
-        saveSopMeta(sopEntry.metaFileId, updatedMeta, token),
-      ])
-
-      const updatedIndex = await updateIndex(index, sopEntry.id, newVersion,
-        new Date().toISOString().split('T')[0], token)
-
-      setHtml(updatedHtml)
-      setMeta(updatedMeta)
-      setIndex(updatedIndex)
-      setSopEntry(prev => ({ ...prev, version: newVersion, lastReviewed: newRevision.date }))
-      setEditing(false)
-      setShowSaveDialog(false)
-    } catch (err) {
-      console.error(err)
-      alert('Save failed. Check Drive permissions and try again.')
-    } finally {
-      setSaving(false)
     }
-  }, [sopEntry, token, editor, meta, index, user])
-
-  const handleRestore = useCallback(async (rev) => {
-    if (!confirm(`Restore v${rev.version}? This will create a new revision.`)) return
-    editor.commands.setContent(rev.htmlSnapshot)
-    setShowHistory(false)
-    setEditing(true)
-  }, [editor])
+  }, [sopEntry, token])
 
   // Mark review as complete — resets the review clock
   const handleCompleteReview = useCallback(async () => {
@@ -155,7 +101,6 @@ export default function SopView() {
     try {
       const now = new Date().toISOString().split('T')[0]
 
-      // Log review event in audit trail
       const event = {
         action: 'review-completed',
         date: new Date().toISOString(),
@@ -164,7 +109,6 @@ export default function SopView() {
       }
       const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
 
-      // Update index: reset lastReviewed, set status to active
       const updatedIndex = await updateSopInIndex(index, sopEntry.id, {
         lastReviewed: now,
         status: 'active',
@@ -182,7 +126,6 @@ export default function SopView() {
   }, [sopEntry, token, index, meta, user])
 
   const handlePrint = useCallback(async () => {
-    // Log to audit trail
     if (sopEntry?.metaFileId && token) {
       const event = {
         action: 'print',
@@ -197,7 +140,6 @@ export default function SopView() {
   }, [sopEntry, token, meta, user])
 
   const handleDownload = useCallback(async () => {
-    // Log to audit trail
     if (sopEntry?.metaFileId && token) {
       const event = {
         action: 'download',
@@ -208,7 +150,6 @@ export default function SopView() {
       const updated = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
       setMeta(updated)
     }
-    // Create downloadable HTML file
     const fullHtml = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${sopEntry?.title || id}</title>
 <style>body{font-family:Inter,system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a1a1a}
@@ -251,7 +192,7 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
               </span>
             )}
 
-            {isAuthed && !editing && sopEntry && (
+            {isAuthed && sopEntry && (
               <>
                 <button
                   onClick={handlePrint}
@@ -268,6 +209,15 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
               </>
             )}
 
+            {sopEntry?.htmlFileId && isAuthed && (
+              <button
+                onClick={() => setShowAuditLog(true)}
+                className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors"
+              >
+                Version History
+              </button>
+            )}
+
             {meta && (
               <button
                 onClick={() => setShowHistory(true)}
@@ -277,30 +227,13 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
               </button>
             )}
 
-            {isAuthed && !editing && (
+            {isAuthed && (
               <button
                 onClick={() => setEditing(true)}
                 className="text-xs font-mono bg-black text-white px-3 py-1.5 hover:bg-[#27474D] transition-colors"
               >
                 Edit
               </button>
-            )}
-
-            {editing && (
-              <>
-                <button
-                  onClick={() => { setEditing(false) }}
-                  className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors"
-                >
-                  Discard
-                </button>
-                <button
-                  onClick={() => setShowSaveDialog(true)}
-                  className="text-xs font-mono bg-black text-white px-3 py-1.5 hover:bg-[#27474D] transition-colors"
-                >
-                  Save revision
-                </button>
-              </>
             )}
           </div>
         </div>
@@ -321,7 +254,7 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
                   : `This SOP is due for its ${cadence.label.toLowerCase()} review soon.`
                 }
               </span>
-              {isAuthed && !editing && (
+              {isAuthed && (
                 <div className="ml-auto flex items-center gap-2">
                   <button
                     onClick={() => setEditing(true)}
@@ -346,9 +279,6 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
         )
       })()}
 
-      {/* Edit toolbar */}
-      {editing && <EditorToolbar editor={editor} />}
-
       {/* Main content */}
       <div className="max-w-screen-xl mx-auto px-8 py-10">
         <div className="max-w-3xl">
@@ -367,39 +297,43 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
             <div className="h-0.5 mb-8" style={{ background: cat.color }} />
           )}
 
-          {/* Document */}
-          {!loading && !editing && (
+          {/* Document (read-only view) */}
+          {!loading && (
             <div
               className="sop-document"
               dangerouslySetInnerHTML={{ __html: html }}
             />
           )}
-
-          {!loading && editing && (
-            <div className="border border-gray-200">
-              <EditorContent editor={editor} />
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Overlays */}
+      {/* SOPEditor full-screen overlay */}
+      {editing && sopEntry?.htmlFileId && (
+        <SOPEditor
+          docId={sopEntry.htmlFileId}
+          title={sopEntry.title}
+          accessToken={token}
+          onClose={handleEditorClose}
+        />
+      )}
+
+      {/* Drive revisions audit log */}
+      {showAuditLog && sopEntry?.htmlFileId && (
+        <AuditLog
+          sopId={sopEntry.htmlFileId}
+          accessToken={token}
+          onClose={() => setShowAuditLog(false)}
+        />
+      )}
+
+      {/* Existing history panel (meta.json revisions) */}
       {showHistory && (
         <HistoryPanel
           meta={meta}
           onClose={() => setShowHistory(false)}
-          onRestore={handleRestore}
+          onRestore={() => {}}
         />
       )}
-
-      {showSaveDialog && (
-        <SaveDialog
-          onSave={handleSave}
-          onCancel={() => setShowSaveDialog(false)}
-          loading={saving}
-        />
-      )}
-
     </div>
   )
 }

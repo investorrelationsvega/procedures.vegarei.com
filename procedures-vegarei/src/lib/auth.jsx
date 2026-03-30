@@ -3,7 +3,7 @@ import { googleLogout } from '@react-oauth/google'
 
 const AuthContext = createContext(null)
 
-const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly openid email profile'
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents openid email profile'
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
 export function AuthProvider({ children }) {

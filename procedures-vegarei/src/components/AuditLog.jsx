@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 
+const mono = { fontFamily: "'Space Mono', monospace" }
+
 export default function AuditLog({ sopId, accessToken, onClose }) {
   const [revisions, setRevisions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -30,90 +32,66 @@ export default function AuditLog({ sopId, accessToken, onClose }) {
   }, [sopId, accessToken])
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'Inter, system-ui, sans-serif',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          maxWidth: '640px',
-          width: '100%',
-          maxHeight: '80vh',
-          overflow: 'auto',
-          padding: '24px',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#1a1a2e', margin: 0 }}>
+    <div className="fixed inset-0 z-50 flex">
+      {/* Backdrop */}
+      <div className="flex-1 bg-black/20" onClick={onClose} />
+
+      {/* Panel — matches HistoryPanel.jsx structure */}
+      <div className="w-[480px] bg-white border-l border-black flex flex-col h-full shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <span style={mono} className="text-xs font-bold tracking-widest uppercase text-[#27474D]">
             Version History
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: '#6b7280',
-              padding: '4px',
-            }}
-          >
+          </span>
+          <button onClick={onClose} className="text-gray-400 hover:text-black text-xl leading-none">
             &times;
           </button>
         </div>
 
-        {loading && <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading revisions…</p>}
-        {error && <p style={{ color: '#ef4444', fontSize: '14px' }}>{error}</p>}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {loading && (
+            <div className="flex items-center gap-3 p-6">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
+              <span style={mono} className="text-xs text-[#797469] uppercase tracking-wider">Loading…</span>
+            </div>
+          )}
 
-        {!loading && !error && revisions.length === 0 && (
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>No revisions found.</p>
-        )}
+          {error && (
+            <div className="m-6 bg-[#fffbeb] border-l-4 border-[#f5c542] px-4 py-3 text-sm text-[#92400e]">
+              {error}
+            </div>
+          )}
 
-        {!loading && !error && revisions.length > 0 && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f9fafb' }}>
-                <th style={{ textAlign: 'left', padding: '10px 12px', borderBottom: '1px solid #e5e7eb', color: '#1a1a2e' }}>#</th>
-                <th style={{ textAlign: 'left', padding: '10px 12px', borderBottom: '1px solid #e5e7eb', color: '#1a1a2e' }}>Modified</th>
-                <th style={{ textAlign: 'left', padding: '10px 12px', borderBottom: '1px solid #e5e7eb', color: '#1a1a2e' }}>User</th>
-                <th style={{ textAlign: 'left', padding: '10px 12px', borderBottom: '1px solid #e5e7eb', color: '#1a1a2e' }}>Email</th>
-              </tr>
-            </thead>
-            <tbody>
-              {revisions.map((rev, i) => (
-                <tr
-                  key={rev.id}
-                  style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f9fafb' }}
-                >
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid #e5e7eb', color: '#1a1a2e' }}>
-                    {revisions.length - i}
-                  </td>
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid #e5e7eb', color: '#1a1a2e' }}>
-                    {new Date(rev.modifiedTime).toLocaleString()}
-                  </td>
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid #e5e7eb', color: '#1a1a2e' }}>
-                    {rev.lastModifyingUser?.displayName || '—'}
-                  </td>
-                  <td style={{ padding: '10px 12px', borderBottom: '1px solid #e5e7eb', color: '#6b7280' }}>
-                    {rev.lastModifyingUser?.emailAddress || '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+          {!loading && !error && revisions.length === 0 && (
+            <p style={mono} className="text-sm text-gray-400 p-6">No revision history yet.</p>
+          )}
+
+          {!loading && !error && revisions.length > 0 && (
+            <div className="px-6 py-4">
+              <table className="sop-document" style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Modified</th>
+                    <th>User</th>
+                    <th>Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {revisions.map((rev, i) => (
+                    <tr key={rev.id}>
+                      <td style={mono} className="text-xs font-bold">{revisions.length - i}</td>
+                      <td className="text-xs">{new Date(rev.modifiedTime).toLocaleString()}</td>
+                      <td className="text-xs">{rev.lastModifyingUser?.displayName || '—'}</td>
+                      <td className="text-xs text-[#797469]">{rev.lastModifyingUser?.emailAddress || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

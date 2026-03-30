@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
-const SCOPES = 'openid email profile https://www.googleapis.com/auth/drive.file'
+const SCOPES = 'openid email profile https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.file'
 
 export default function useGoogleAuth() {
   const [user, setUser] = useState(null)
@@ -11,7 +11,6 @@ export default function useGoogleAuth() {
 
   const isAuthenticated = !!accessToken
 
-  // Load Google Identity Services script
   useEffect(() => {
     if (scriptLoadedRef.current) return
 
@@ -52,7 +51,6 @@ export default function useGoogleAuth() {
     const token = response.access_token
     setAccessToken(token)
 
-    // Fetch user profile from the ID token
     try {
       const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${token}` },
