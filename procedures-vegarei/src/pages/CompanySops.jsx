@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex, getReviewStatus, getCompanyFolder, cacheFolderIds, findUnindexedFiles } from '../lib/drive'
+import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, createGoogleDoc, addSopToIndex, getReviewStatus, getCompanyFolder, getCategoryFolder, cacheFolderIds, findUnindexedFiles } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import { DEFAULT_SOP_HTML } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
@@ -115,20 +115,20 @@ export default function CompanySops() {
     navigate(`/sop/${sopId}`)
   }, [navigate])
 
-  const handleCreate = useCallback(async ({ sopId, title, category, owner, company: comp, reviewCadence, description, useAi }) => {
+  const handleCreate = useCallback(async ({ sopId, title, category, subcategory, owner, company: comp, reviewCadence, description, useAi }) => {
     if (!token) return
     setCreating(true)
     try {
       // TODO: If useAi && description, call Claude API to generate SOP HTML
       const sopHtml = DEFAULT_SOP_HTML
 
-      // Get (or create) the business unit folder in Drive
-      const folderId = await getCompanyFolder(comp, index, token)
+      // Get (or create) the category folder in Drive
+      // Standard Operating Procedures / {Business Unit} / {Category}
+      const folderId = await getCategoryFolder(comp, category, index, token)
 
-      const htmlFile = await createDriveFile(
-        `${sopId}.html`,
+      const htmlFile = await createGoogleDoc(
+        sopId,
         sopHtml,
-        'text/html',
         token,
         folderId
       )
@@ -168,6 +168,7 @@ export default function CompanySops() {
         id: sopId,
         title,
         category,
+        subcategory: subcategory || '',
         version: '1.0',
         lastReviewed: now,
         status: 'draft',
@@ -190,21 +191,24 @@ export default function CompanySops() {
     }
   }, [token, user, index, navigate])
 
-  // Filter SOPs for this company
-  const companySops = index?.sops?.filter(s => s.company === company) || []
+  // Filter SOPs for this company — separate active from archived
+  const allCompanySops = index?.sops?.filter(s => s.company === company) || []
+  const companySops = allCompanySops.filter(s => s.status !== 'archived')
+  const archivedSops = allCompanySops.filter(s => s.status === 'archived')
 
   const filtered = useMemo(() => {
-    let result = companySops.filter(s => {
+    const source = activeFilter === 'archived' ? archivedSops : companySops
+    let result = source.filter(s => {
       const matchesSearch = search === '' ||
         s.title.toLowerCase().includes(search.toLowerCase()) ||
         s.id.toLowerCase().includes(search.toLowerCase())
-      const matchesFilter = activeFilter === 'all' || s.category === activeFilter
+      const matchesFilter = activeFilter === 'all' || activeFilter === 'archived' || s.category === activeFilter
       return matchesSearch && matchesFilter
     })
     return sortSops(result, sortBy)
-  }, [companySops, search, activeFilter, sortBy])
+  }, [companySops, archivedSops, search, activeFilter, sortBy])
 
-  // Get unique categories that exist in this company's SOPs
+  // Get unique categories that exist in this company's active SOPs
   const activeCategories = [...new Set(companySops.map(s => s.category))]
 
   // Group filtered SOPs by category
@@ -322,6 +326,18 @@ export default function CompanySops() {
                 </button>
               )
             })}
+            {archivedSops.length > 0 && (
+              <button
+                onClick={() => setActiveFilter(activeFilter === 'archived' ? 'all' : 'archived')}
+                className={`px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider border transition-colors ${
+                  activeFilter === 'archived'
+                    ? 'bg-black text-white border-black'
+                    : 'border-dashed border-gray-300 text-[#797469] hover:border-gray-400'
+                }`}
+              >
+                Archived ({archivedSops.length})
+              </button>
+            )}
           </div>
 
           {/* Sort */}
@@ -431,25 +447,19 @@ export default function CompanySops() {
 
           {Object.keys(grouped).length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-12 h-12 rounded-full border-2 border-gray-200 flex items-center justify-center mb-4">
-                <svg width="20" height="20" fill="none" stroke="#797469" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path d="M9 12h6M12 9v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <p style={mono} className="text-xs text-[#797469] uppercase tracking-wider mb-1">
-                {search ? `No results for "${search}"` : 'No procedures yet'}
+              <p style={mono} className="text-sm text-[#797469] uppercase tracking-wider mb-6">
+                {search ? `No results for "${search}"` : 'None here yet'}
               </p>
-              <p className="text-xs text-[#797469] mb-6">
-                {search ? 'Try a different search term.' : `Create the first SOP for ${companyName}.`}
-              </p>
-              {isAuthed && !search && (
+              {search ? (
+                <p className="text-xs text-[#797469]">Try a different search term.</p>
+              ) : isAuthed ? (
                 <button
                   onClick={() => setShowCreate(true)}
-                  className="text-[10px] font-mono uppercase tracking-wider bg-black text-white px-5 py-2.5 hover:bg-[#27474D] transition-colors"
+                  className="text-[10px] font-mono uppercase tracking-wider bg-black text-white px-5 py-2.5 hover:bg-[#27474D] transition-colors flex items-center gap-1.5"
                 >
-                  + Create First SOP
+                  <span className="text-sm leading-none">+</span> Create SOP
                 </button>
-              )}
+              ) : null}
             </div>
           )}
         </div>

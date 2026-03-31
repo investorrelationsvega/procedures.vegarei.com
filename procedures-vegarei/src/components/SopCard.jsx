@@ -71,6 +71,13 @@ export default function SopCard({ sop }) {
           </span>
         </div>
 
+        {/* Subcategory */}
+        {sop.subcategory && (
+          <span style={mono} className="text-[9px] text-[#797469] uppercase tracking-wider">
+            {sop.subcategory}
+          </span>
+        )}
+
         {/* Title */}
         <h3 className="text-[13px] font-semibold text-black leading-snug mb-2.5 group-hover:text-[#27474D] transition-colors">
           {sop.title}

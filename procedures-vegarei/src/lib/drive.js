@@ -128,6 +128,42 @@ export function bumpVersion(current, type) {
   return `${major}.${minor}.${(patch || 0) + 1}`
 }
 
+// ── Create a new Google Doc in Drive ─────────────────────────
+// Creates a native Google Doc (not an HTML file) so it's editable in both
+// the procedures site and directly in Google Drive.
+// Uses Drive API import to convert HTML content into a Google Doc.
+export async function createGoogleDoc(name, htmlContent, token, parentFolderId) {
+  const metadata = {
+    name,
+    mimeType: 'application/vnd.google-apps.document',
+  }
+  if (parentFolderId) metadata.parents = [parentFolderId]
+
+  const boundary = '---vega_sop_boundary'
+  const body =
+    `--${boundary}\r\n` +
+    `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+    `${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Type: text/html\r\n\r\n` +
+    `${htmlContent}\r\n` +
+    `--${boundary}--`
+
+  const res = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    }
+  )
+  if (!res.ok) throw new Error(`Drive create Google Doc failed: ${res.status}`)
+  return res.json()
+}
+
 // ── Create a new file in Drive ───────────────────────────────
 // Uses multipart upload to prevent Google from converting files to Google Docs.
 // The old two-step approach (create metadata → upload content) caused Drive to
@@ -199,21 +235,22 @@ async function createFolder(name, parentId, token) {
 }
 
 // Get (or create) the folder for a business unit:
-//   Vega Procedures / {Business Unit Label}
+//   Standard Operating Procedures / {Business Unit Label}
 // Caches folder IDs in the index to avoid repeated lookups.
 export async function getCompanyFolder(companySlug, index, token) {
-  // Check if we already have it cached in the index
   const cached = index?.folderIds?.[companySlug]
   if (cached) return cached
 
   const companyConfig = COMPANIES[companySlug]
   if (!companyConfig) return null
 
-  // Find or create root "Vega Procedures" folder
+  // Find or create root "Standard Operating Procedures" folder
   let rootId = index?.folderIds?.root || null
   if (!rootId) {
-    rootId = await findFolder('Vega Procedures', null, token)
-    if (!rootId) rootId = await createFolder('Vega Procedures', null, token)
+    // Check for both old and new folder names
+    rootId = await findFolder('Standard Operating Procedures', null, token)
+    if (!rootId) rootId = await findFolder('Vega Procedures', null, token)
+    if (!rootId) rootId = await createFolder('Standard Operating Procedures', null, token)
   }
 
   // Find or create business unit folder inside root
@@ -221,6 +258,22 @@ export async function getCompanyFolder(companySlug, index, token) {
   if (!buId) buId = await createFolder(companyConfig.label, rootId, token)
 
   return buId
+}
+
+// Get (or create) a category subfolder within a business unit folder:
+//   Standard Operating Procedures / {Business Unit} / {Category Label}
+// Creates the category folder on the fly if it doesn't exist.
+export async function getCategoryFolder(companySlug, categoryKey, index, token) {
+  const companyFolderId = await getCompanyFolder(companySlug, index, token)
+  if (!companyFolderId) return null
+
+  const category = CATEGORIES[categoryKey]
+  if (!category) return companyFolderId
+
+  let catId = await findFolder(category.label, companyFolderId, token)
+  if (!catId) catId = await createFolder(category.label, companyFolderId, token)
+
+  return catId
 }
 
 // ── Add a new SOP to the master index ────────────────────────
@@ -287,9 +340,10 @@ export const CATEGORIES = {
   billing:        { label: 'Billing',              color: '#f59e0b', code: 'BIL' },
   clinical:       { label: 'Clinical',             color: '#06b6d4', code: 'CLN' },
   // Property Management
-  leasing:        { label: 'Leasing',              color: '#06b6d4', code: 'LSE' },
-  maintenance:    { label: 'Maintenance',          color: '#78716c', code: 'MNT' },
-  'tenant-rel':   { label: 'Tenant Relations',     color: '#ec4899', code: 'TR' },
+  occupancy:     { label: 'Occupancy',            color: '#06b6d4', code: 'OCC' },
+  maintenance:   { label: 'Maintenance',          color: '#78716c', code: 'MNT' },
+  financials:    { label: 'Financials',           color: '#22c55e', code: 'FIN' },
+  systems:       { label: 'Systems',              color: '#6366f1', code: 'SYS' },
   // Valuations
   appraisal:      { label: 'Appraisal',            color: '#f59e0b', code: 'APR' },
   review:         { label: 'Review',               color: '#8b5cf6', code: 'REV' },
@@ -307,7 +361,7 @@ export const COMPANIES = {
   'development':         { label: 'Development',        prefix: 'DEV', categories: ['land-acq', 'permits', 'construction', 'finance', 'compliance', 'operations'] },
   'hospice':             { label: 'Hospice',            prefix: 'HSP', categories: ['patient-care', 'clinical', 'compliance', 'billing', 'hr', 'operations'] },
   'private-equity':      { label: 'Private Equity',     prefix: 'PE',  categories: ['investor', 'fund-admin', 'compliance', 'tax', 'legal', 'operations'] },
-  'property-management': { label: 'Property Management', prefix: 'PM', categories: ['leasing', 'maintenance', 'tenant-rel', 'finance', 'compliance', 'operations'] },
+  'property-management': { label: 'Property Management', prefix: 'PM', categories: ['occupancy', 'maintenance', 'financials', 'systems'] },
   'valuations':          { label: 'Valuations',         prefix: 'VAL', categories: ['appraisal', 'review', 'compliance', 'quality', 'reporting', 'operations'] },
   'employee-handbook':   { label: 'Employee Handbook',  prefix: 'EHB', categories: ['policies', 'benefits', 'conduct', 'hr', 'safety', 'technology'] },
 }
