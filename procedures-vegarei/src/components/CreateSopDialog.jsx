@@ -123,8 +123,9 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
       owner: owner.trim(),
       company,
       reviewCadence,
-      description: mode === 'ai' ? description.trim() : mode === 'upload' ? uploadedText.trim() : '',
-      useAi: mode !== 'blank',
+      description: mode === 'ai' ? description.trim() : '',
+      useAi: mode === 'ai',
+      uploadedHtml: mode === 'upload' ? uploadedText.trim() : '',
     })
   }
 
@@ -368,7 +369,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".docx,.doc,.txt,.md"
+                  accept=".html,.htm,.txt,.md,.docx"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
@@ -387,7 +388,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                         Click to upload a document
                       </p>
                       <p className="text-[10px] font-mono text-gray-400 mt-1">
-                        .docx, .doc, .txt, .md
+                        .html, .txt, .md, .docx
                       </p>
                     </div>
                   </button>
@@ -433,18 +434,20 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                     )}
 
                     {uploadedText && !parsing && (
-                      <>
-                        {/* Preview of extracted text */}
-                        <Field label={`Extracted Content (${uploadedText.split(/\n/).length} lines)`}>
-                          <div className="border border-gray-200 bg-gray-50 px-3 py-2 max-h-40 overflow-y-auto">
+                      <Field label="Preview">
+                        <div className="border border-gray-200 bg-white px-4 py-3 max-h-48 overflow-y-auto">
+                          {uploadedFile?.name?.match(/\.html?$/i) ? (
+                            <div
+                              className="sop-document text-xs"
+                              dangerouslySetInnerHTML={{ __html: uploadedText.slice(0, 5000) }}
+                            />
+                          ) : (
                             <pre className="text-[11px] text-[#566F69] whitespace-pre-wrap font-mono leading-relaxed">
                               {uploadedText.slice(0, 2000)}{uploadedText.length > 2000 ? '\n…' : ''}
                             </pre>
-                          </div>
-                        </Field>
-
-                        <SectionPreview label="The uploaded content will be reformatted into" />
-                      </>
+                          )}
+                        </div>
+                      </Field>
                     )}
                   </div>
                 )}

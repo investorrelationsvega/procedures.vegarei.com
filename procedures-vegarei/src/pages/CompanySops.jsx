@@ -115,12 +115,12 @@ export default function CompanySops() {
     navigate(`/sop/${sopId}`)
   }, [navigate])
 
-  const handleCreate = useCallback(async ({ sopId, title, category, subcategory, owner, company: comp, reviewCadence, description, useAi }) => {
+  const handleCreate = useCallback(async ({ sopId, title, category, subcategory, owner, company: comp, reviewCadence, description, useAi, uploadedHtml }) => {
     if (!token) return
     setCreating(true)
     try {
-      // TODO: If useAi && description, call Claude API to generate SOP HTML
-      const sopHtml = DEFAULT_SOP_HTML
+      // Use uploaded HTML if provided, otherwise default template
+      const sopHtml = uploadedHtml || DEFAULT_SOP_HTML
 
       // Get (or create) the category folder in Drive
       // Standard Operating Procedures / {Business Unit} / {Category}
