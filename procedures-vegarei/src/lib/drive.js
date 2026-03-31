@@ -1,9 +1,12 @@
 const INDEX_FILE_ID = import.meta.env.VITE_DRIVE_INDEX_FILE_ID
 
+// All Drive API calls need supportsAllDrives=true to work with Shared Drives
+const SD = 'supportsAllDrives=true'
+
 // ── Fetch a file's content from Drive ─────────────────────
 export async function fetchDriveFile(fileId, token) {
   const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&${SD}`,
     { headers: { Authorization: `Bearer ${token}` } }
   )
   if (!res.ok) throw new Error(`Drive fetch failed: ${res.status}`)
@@ -34,7 +37,7 @@ export async function loadSopMeta(metaFileId, token) {
 // ── Save updated HTML to Drive ────────────────────────────
 export async function saveSopHtml(fileId, htmlContent, token) {
   const res = await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media&${SD}`,
     {
       method: 'PATCH',
       headers: {
@@ -51,7 +54,7 @@ export async function saveSopHtml(fileId, htmlContent, token) {
 // ── Save updated meta JSON to Drive ───────────────────────
 export async function saveSopMeta(fileId, meta, token) {
   const res = await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media&${SD}`,
     {
       method: 'PATCH',
       headers: {
@@ -94,7 +97,7 @@ export async function updateSopInIndex(index, sopId, fields, token) {
 // ── Save the full index back to Drive ──────────────────────
 async function saveIndex(index, token) {
   await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${INDEX_FILE_ID}?uploadType=media`,
+    `https://www.googleapis.com/upload/drive/v3/files/${INDEX_FILE_ID}?uploadType=media&${SD}`,
     {
       method: 'PATCH',
       headers: {
@@ -150,7 +153,7 @@ export async function createGoogleDoc(name, htmlContent, token, parentFolderId) 
     `--${boundary}--`
 
   const res = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&${SD}`,
     {
       method: 'POST',
       headers: {
@@ -183,7 +186,7 @@ export async function createDriveFile(name, content, mimeType, token, parentFold
     `--${boundary}--`
 
   const res = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&${SD}`,
     {
       method: 'POST',
       headers: {
@@ -203,7 +206,7 @@ async function findFolder(name, parentId, token) {
   const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false` +
     (parentId ? ` and '${parentId}' in parents` : '')
   const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1`,
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1&${SD}&includeItemsFromAllDrives=true`,
     { headers: { Authorization: `Bearer ${token}` } }
   )
   if (!res.ok) throw new Error(`Drive folder search failed: ${res.status}`)
@@ -219,7 +222,7 @@ async function createFolder(name, parentId, token) {
   if (parentId) metadata.parents = [parentId]
 
   const res = await fetch(
-    'https://www.googleapis.com/drive/v3/files',
+    `https://www.googleapis.com/drive/v3/files?${SD}`,
     {
       method: 'POST',
       headers: {
@@ -285,7 +288,7 @@ export async function addSopToIndex(index, newSop, token) {
   }
   const INDEX_FILE = import.meta.env.VITE_DRIVE_INDEX_FILE_ID
   await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${INDEX_FILE}?uploadType=media`,
+    `https://www.googleapis.com/upload/drive/v3/files/${INDEX_FILE}?uploadType=media&${SD}`,
     {
       method: 'PATCH',
       headers: {
@@ -393,7 +396,7 @@ export async function listFolderFiles(folderId, token) {
   let pageToken = ''
   do {
     const q = `'${folderId}' in parents and trashed=false`
-    let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,mimeType,modifiedTime)&pageSize=100`
+    let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,mimeType,modifiedTime)&pageSize=100&${SD}&includeItemsFromAllDrives=true`
     if (pageToken) url += `&pageToken=${pageToken}`
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     if (!res.ok) throw new Error(`Drive list failed: ${res.status}`)
@@ -408,7 +411,7 @@ export async function listFolderFiles(folderId, token) {
 // Google Docs use a proprietary format — this exports to clean HTML.
 export async function exportGoogleDocAsHtml(fileId, token) {
   const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/html`,
+    `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/html&${SD}`,
     { headers: { Authorization: `Bearer ${token}` } }
   )
   if (!res.ok) throw new Error(`Drive export failed: ${res.status}`)

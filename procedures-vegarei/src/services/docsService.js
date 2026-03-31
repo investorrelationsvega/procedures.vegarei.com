@@ -75,7 +75,7 @@ export async function saveDocContent(docId, htmlContent, accessToken) {
 // ── Fetch and parse _index.json from Drive ────────────────────
 
 export async function fetchIndex(indexFileId, accessToken) {
-  const res = await fetch(`${DRIVE_API}/${indexFileId}?alt=media`, {
+  const res = await fetch(`${DRIVE_API}/${indexFileId}?alt=media&supportsAllDrives=true`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   handleAuthError(res)
