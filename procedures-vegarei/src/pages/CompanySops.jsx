@@ -115,7 +115,7 @@ export default function CompanySops() {
     navigate(`/sop/${sopId}`)
   }, [navigate])
 
-  const handleCreate = useCallback(async ({ sopId, title, category, owner, company: comp, reviewCadence, description, useAi }) => {
+  const handleCreate = useCallback(async ({ sopId, title, category, subcategory, owner, company: comp, reviewCadence, description, useAi }) => {
     if (!token) return
     setCreating(true)
     try {
@@ -168,6 +168,7 @@ export default function CompanySops() {
         id: sopId,
         title,
         category,
+        subcategory: subcategory || '',
         version: '1.0',
         lastReviewed: now,
         status: 'draft',

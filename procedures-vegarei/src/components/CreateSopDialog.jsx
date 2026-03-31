@@ -13,6 +13,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
   // Step 1: metadata
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
+  const [subcategory, setSubcategory] = useState('')
   const [owner, setOwner] = useState('')
   const [reviewCadence, setReviewCadence] = useState('quarterly')
 
@@ -50,13 +51,27 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
     return [...builtIn, ...extras]
   }, [company, existingSops])
 
+  // Get existing subcategories for the selected category (no duplicates)
+  const existingSubcategories = useMemo(() => {
+    if (!category) return []
+    const subs = (existingSops || [])
+      .filter(s => s.category === category && s.subcategory)
+      .map(s => s.subcategory)
+    return [...new Set(subs)].sort()
+  }, [category, existingSops])
+
+  // Check if the entered subcategory already exists (case-insensitive)
+  const subcategoryExists = useMemo(() => {
+    return existingSubcategories.some(s => s.toLowerCase() === subcategory.trim().toLowerCase())
+  }, [subcategory, existingSubcategories])
+
   // Auto-generate SOP ID based on selections
   const sopId = useMemo(() => {
     if (!category) return ''
     return generateSopId(company, category, existingSops || [])
   }, [company, category, existingSops])
 
-  const canProceed = title.trim() && category
+  const canProceed = title.trim() && category && subcategory.trim()
   const canGenerate = mode === 'ai'
     ? description.trim().length > 0
     : mode === 'upload'
@@ -104,6 +119,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
       sopId,
       title: title.trim(),
       category,
+      subcategory: subcategory.trim(),
       owner: owner.trim(),
       company,
       reviewCadence,
@@ -136,7 +152,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                 {categoryOptions.map(opt => (
                   <button
                     key={opt.value}
-                    onClick={() => { setCategory(opt.value); setShowCustom(false) }}
+                    onClick={() => { setCategory(opt.value); setSubcategory(''); setShowCustom(false) }}
                     className={`flex items-center gap-2 px-3 py-2 text-xs font-mono border transition-colors text-left ${
                       category === opt.value
                         ? 'bg-black text-white border-black'
@@ -208,10 +224,40 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
               )}
             </Field>
 
+            {/* Subcategory */}
+            {category && (
+              <Field label="Subcategory">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={subcategory}
+                    onChange={e => setSubcategory(e.target.value)}
+                    placeholder="e.g. Tenant Onboarding"
+                    list={`subcategory-options-${category}`}
+                    className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
+                  />
+                  <datalist id={`subcategory-options-${category}`}>
+                    {existingSubcategories.map(sub => (
+                      <option key={sub} value={sub} />
+                    ))}
+                  </datalist>
+                </div>
+                {subcategory.trim() && subcategoryExists && (
+                  <p className="text-[10px] text-[#797469] font-mono mt-1">
+                    Existing subcategory — SOPs will be grouped together
+                  </p>
+                )}
+                {subcategory.trim() && !subcategoryExists && existingSubcategories.length > 0 && (
+                  <p className="text-[10px] text-[#22c55e] font-mono mt-1">
+                    New subcategory
+                  </p>
+                )}
+              </Field>
+            )}
+
             {/* Title */}
             <Field label="Title">
               <input
-                autoFocus
                 type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}

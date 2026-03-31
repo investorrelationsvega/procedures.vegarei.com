@@ -340,9 +340,10 @@ export const CATEGORIES = {
   billing:        { label: 'Billing',              color: '#f59e0b', code: 'BIL' },
   clinical:       { label: 'Clinical',             color: '#06b6d4', code: 'CLN' },
   // Property Management
-  leasing:        { label: 'Leasing',              color: '#06b6d4', code: 'LSE' },
-  maintenance:    { label: 'Maintenance',          color: '#78716c', code: 'MNT' },
-  'tenant-rel':   { label: 'Tenant Relations',     color: '#ec4899', code: 'TR' },
+  occupancy:     { label: 'Occupancy',            color: '#06b6d4', code: 'OCC' },
+  maintenance:   { label: 'Maintenance',          color: '#78716c', code: 'MNT' },
+  financials:    { label: 'Financials',           color: '#22c55e', code: 'FIN' },
+  systems:       { label: 'Systems',              color: '#6366f1', code: 'SYS' },
   // Valuations
   appraisal:      { label: 'Appraisal',            color: '#f59e0b', code: 'APR' },
   review:         { label: 'Review',               color: '#8b5cf6', code: 'REV' },
@@ -360,7 +361,7 @@ export const COMPANIES = {
   'development':         { label: 'Development',        prefix: 'DEV', categories: ['land-acq', 'permits', 'construction', 'finance', 'compliance', 'operations'] },
   'hospice':             { label: 'Hospice',            prefix: 'HSP', categories: ['patient-care', 'clinical', 'compliance', 'billing', 'hr', 'operations'] },
   'private-equity':      { label: 'Private Equity',     prefix: 'PE',  categories: ['investor', 'fund-admin', 'compliance', 'tax', 'legal', 'operations'] },
-  'property-management': { label: 'Property Management', prefix: 'PM', categories: ['leasing', 'maintenance', 'tenant-rel', 'finance', 'compliance', 'operations'] },
+  'property-management': { label: 'Property Management', prefix: 'PM', categories: ['occupancy', 'maintenance', 'financials', 'systems'] },
   'valuations':          { label: 'Valuations',         prefix: 'VAL', categories: ['appraisal', 'review', 'compliance', 'quality', 'reporting', 'operations'] },
   'employee-handbook':   { label: 'Employee Handbook',  prefix: 'EHB', categories: ['policies', 'benefits', 'conduct', 'hr', 'safety', 'technology'] },
 }
