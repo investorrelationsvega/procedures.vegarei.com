@@ -431,25 +431,19 @@ export default function CompanySops() {
 
           {Object.keys(grouped).length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-12 h-12 rounded-full border-2 border-gray-200 flex items-center justify-center mb-4">
-                <svg width="20" height="20" fill="none" stroke="#797469" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path d="M9 12h6M12 9v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <p style={mono} className="text-xs text-[#797469] uppercase tracking-wider mb-1">
-                {search ? `No results for "${search}"` : 'No procedures yet'}
+              <p style={mono} className="text-sm text-[#797469] uppercase tracking-wider mb-6">
+                {search ? `No results for "${search}"` : 'None here yet'}
               </p>
-              <p className="text-xs text-[#797469] mb-6">
-                {search ? 'Try a different search term.' : `Create the first SOP for ${companyName}.`}
-              </p>
-              {isAuthed && !search && (
+              {search ? (
+                <p className="text-xs text-[#797469]">Try a different search term.</p>
+              ) : isAuthed ? (
                 <button
                   onClick={() => setShowCreate(true)}
-                  className="text-[10px] font-mono uppercase tracking-wider bg-black text-white px-5 py-2.5 hover:bg-[#27474D] transition-colors"
+                  className="text-[10px] font-mono uppercase tracking-wider bg-black text-white px-5 py-2.5 hover:bg-[#27474D] transition-colors flex items-center gap-1.5"
                 >
-                  + Create First SOP
+                  <span className="text-sm leading-none">+</span> Create SOP
                 </button>
-              )}
+              ) : null}
             </div>
           )}
         </div>
