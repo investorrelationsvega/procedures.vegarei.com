@@ -12,16 +12,19 @@ import SOPEditor from '../components/SOPEditor'
 import AuditLog from '../components/AuditLog'
 import VegaStar from '../components/VegaStar'
 
-const META_LABELS = ['version', 'effective', 'owner', 'maker', 'checker', 'review cycle', 'classification']
+const META_LABELS = ['version', 'effective', 'category', 'owner', 'maker', 'checker', 'review cycle', 'classification']
 
 /**
  * Post-process SOP HTML to clean up meta fields that Google Docs
  * converts from styled divs to plain paragraphs.
- * Detects label/value pairs and wraps them in a styled meta strip.
+ * Handles both formats:
+ * - New: <p><strong>Label:</strong> Value</p> (already looks fine, wrap in meta-block)
+ * - Legacy: alternating <p>Label</p><p>Value</p> pairs (convert to meta-block)
  */
 function cleanupSopHtml(html) {
   if (!html) return html
-  // If the HTML already has .meta-strip class, it's properly formatted
+  // If the HTML already has .meta-block or .meta-strip, it's properly formatted
+  if (html.includes('meta-block') || html.includes('meta-strip')) return html
   if (html.includes('meta-strip')) return html
 
   const parser = new DOMParser()
