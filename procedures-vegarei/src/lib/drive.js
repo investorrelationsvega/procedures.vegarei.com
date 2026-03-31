@@ -128,6 +128,42 @@ export function bumpVersion(current, type) {
   return `${major}.${minor}.${(patch || 0) + 1}`
 }
 
+// ── Create a new Google Doc in Drive ─────────────────────────
+// Creates a native Google Doc (not an HTML file) so it's editable in both
+// the procedures site and directly in Google Drive.
+// Uses Drive API import to convert HTML content into a Google Doc.
+export async function createGoogleDoc(name, htmlContent, token, parentFolderId) {
+  const metadata = {
+    name,
+    mimeType: 'application/vnd.google-apps.document',
+  }
+  if (parentFolderId) metadata.parents = [parentFolderId]
+
+  const boundary = '---vega_sop_boundary'
+  const body =
+    `--${boundary}\r\n` +
+    `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+    `${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Type: text/html\r\n\r\n` +
+    `${htmlContent}\r\n` +
+    `--${boundary}--`
+
+  const res = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    }
+  )
+  if (!res.ok) throw new Error(`Drive create Google Doc failed: ${res.status}`)
+  return res.json()
+}
+
 // ── Create a new file in Drive ───────────────────────────────
 // Uses multipart upload to prevent Google from converting files to Google Docs.
 // The old two-step approach (create metadata → upload content) caused Drive to

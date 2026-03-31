@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, addSopToIndex, getReviewStatus, getCompanyFolder, cacheFolderIds, findUnindexedFiles } from '../lib/drive'
+import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, createGoogleDoc, addSopToIndex, getReviewStatus, getCompanyFolder, cacheFolderIds, findUnindexedFiles } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import { DEFAULT_SOP_HTML } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
@@ -125,10 +125,9 @@ export default function CompanySops() {
       // Get (or create) the business unit folder in Drive
       const folderId = await getCompanyFolder(comp, index, token)
 
-      const htmlFile = await createDriveFile(
-        `${sopId}.html`,
+      const htmlFile = await createGoogleDoc(
+        sopId,
         sopHtml,
-        'text/html',
         token,
         folderId
       )

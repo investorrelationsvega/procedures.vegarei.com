@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { fetchDocContent, saveDocContent } from '../services/docsService'
+import { fetchDriveFile, saveSopHtml } from '../lib/drive'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -34,15 +35,23 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
   const [dirty, setDirty] = useState(false)
-  const originalHtml = useRef('')
+  const isGoogleDoc = useRef(false)
 
   useEffect(() => {
     async function load() {
       setLoading(true)
       setError(null)
       try {
-        const html = await fetchDocContent(docId, accessToken)
-        originalHtml.current = html
+        // Try Google Docs API first
+        let html
+        try {
+          html = await fetchDocContent(docId, accessToken)
+          isGoogleDoc.current = true
+        } catch {
+          // Fall back to raw HTML file
+          html = await fetchDriveFile(docId, accessToken)
+          isGoogleDoc.current = false
+        }
         if (editorRef.current) {
           editorRef.current.innerHTML = html
         }
@@ -66,8 +75,12 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
     setSaved(false)
     setError(null)
     try {
-      await saveDocContent(docId, editorRef.current.innerHTML, accessToken)
-      originalHtml.current = editorRef.current.innerHTML
+      const content = editorRef.current.innerHTML
+      if (isGoogleDoc.current) {
+        await saveDocContent(docId, content, accessToken)
+      } else {
+        await saveSopHtml(docId, content, accessToken)
+      }
       setDirty(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -85,7 +98,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      {/* Toolbar — matches EditorToolbar.jsx styling */}
+      {/* Toolbar */}
       <div className="flex flex-wrap gap-1.5 px-6 py-3 border-b border-gray-200 bg-gray-50 items-center">
         <span style={mono} className="text-xs font-bold tracking-widest uppercase text-[#27474D] mr-4">
           {title || 'Edit SOP'}
@@ -114,7 +127,6 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
         <ToolbarButton label="Undo" onClick={() => document.execCommand('undo')} title="Undo" />
         <ToolbarButton label="Redo" onClick={() => document.execCommand('redo')} title="Redo" />
 
-        {/* Spacer */}
         <div className="flex-1" />
 
         {error && (
