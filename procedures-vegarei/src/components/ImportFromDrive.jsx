@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { CATEGORIES, COMPANIES, REVIEW_CADENCES, generateSopId, exportGoogleDocAsHtml, fetchDriveFile, createDriveFile, createGoogleDoc, addSopToIndex, getCompanyFolder, cacheFolderIds } from '../lib/drive'
+import { CATEGORIES, COMPANIES, REVIEW_CADENCES, generateSopId, exportGoogleDocAsHtml, fetchDriveFile, createDriveFile, createGoogleDoc, addSopToIndex, getCompanyFolder, getCategoryFolder, cacheFolderIds } from '../lib/drive'
 import { useAuth } from '../lib/auth'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
@@ -67,8 +67,8 @@ export default function ImportFromDrive({ company, files, existingSops, index, o
           .join('\n')
       }
 
-      // 2. Get or create company folder
-      const folderId = await getCompanyFolder(company, index, token)
+      // 2. Get or create category folder
+      const folderId = await getCategoryFolder(company, category, index, token)
 
       // 3. Create the SOP as a Google Doc in Drive
       const htmlFile = await createGoogleDoc(

@@ -235,21 +235,22 @@ async function createFolder(name, parentId, token) {
 }
 
 // Get (or create) the folder for a business unit:
-//   Vega Procedures / {Business Unit Label}
+//   Standard Operating Procedures / {Business Unit Label}
 // Caches folder IDs in the index to avoid repeated lookups.
 export async function getCompanyFolder(companySlug, index, token) {
-  // Check if we already have it cached in the index
   const cached = index?.folderIds?.[companySlug]
   if (cached) return cached
 
   const companyConfig = COMPANIES[companySlug]
   if (!companyConfig) return null
 
-  // Find or create root "Vega Procedures" folder
+  // Find or create root "Standard Operating Procedures" folder
   let rootId = index?.folderIds?.root || null
   if (!rootId) {
-    rootId = await findFolder('Vega Procedures', null, token)
-    if (!rootId) rootId = await createFolder('Vega Procedures', null, token)
+    // Check for both old and new folder names
+    rootId = await findFolder('Standard Operating Procedures', null, token)
+    if (!rootId) rootId = await findFolder('Vega Procedures', null, token)
+    if (!rootId) rootId = await createFolder('Standard Operating Procedures', null, token)
   }
 
   // Find or create business unit folder inside root
@@ -257,6 +258,22 @@ export async function getCompanyFolder(companySlug, index, token) {
   if (!buId) buId = await createFolder(companyConfig.label, rootId, token)
 
   return buId
+}
+
+// Get (or create) a category subfolder within a business unit folder:
+//   Standard Operating Procedures / {Business Unit} / {Category Label}
+// Creates the category folder on the fly if it doesn't exist.
+export async function getCategoryFolder(companySlug, categoryKey, index, token) {
+  const companyFolderId = await getCompanyFolder(companySlug, index, token)
+  if (!companyFolderId) return null
+
+  const category = CATEGORIES[categoryKey]
+  if (!category) return companyFolderId
+
+  let catId = await findFolder(category.label, companyFolderId, token)
+  if (!catId) catId = await createFolder(category.label, companyFolderId, token)
+
+  return catId
 }
 
 // ── Add a new SOP to the master index ────────────────────────
