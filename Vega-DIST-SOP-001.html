@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DIST-SOP-001 — Monthly Investor Distributions | Vega</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #e8e8e8; }
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.65;
+  color: #111;
+  background: #fff;
+  width: 8.5in;
+  margin: 40px auto;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+}
+.doc-header {
+  padding: 20px 0.85in 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #111;
+}
+.header-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 7pt;
+  color: #999;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: right;
+  line-height: 1.8;
+}
+.title-block {
+  padding: 28px 0.85in 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+.sop-id {
+  font-family: 'Space Mono', monospace;
+  font-size: 7.5pt;
+  color: #999;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.sop-title {
+  font-size: 26pt;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #111;
+  margin-bottom: 8px;
+}
+.sop-scope { font-size: 10pt; color: #666; }
+.meta-block {
+  padding: 16px 0.85in 18px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fafafa;
+}
+.meta-block p { font-size: 9.5pt; line-height: 2.1; color: #333; margin: 0; }
+.meta-block strong { font-family: 'Space Mono', monospace; font-size: 8pt; font-weight: 700; color: #111; }
+.doc-body { padding: 32px 0.85in 64px; }
+h2 {
+  font-family: 'Space Mono', monospace;
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #111;
+  margin: 36px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid #111;
+}
+h2:first-child { margin-top: 0; }
+.sub-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #777;
+  margin: 20px 0 8px;
+}
+.phase {
+  background: #111;
+  color: #fff;
+  padding: 8px 14px;
+  margin: 24px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.phase-num { font-family: 'Space Mono', monospace; font-size: 7pt; color: #888; font-weight: 700; flex-shrink: 0; }
+.phase-title { font-family: 'Space Mono', monospace; font-size: 7.5pt; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+.phase-note { font-family: 'Space Mono', monospace; font-size: 6.5pt; color: #777; margin-left: auto; }
+p { font-size: 10pt; line-height: 1.7; margin-bottom: 10px; color: #222; }
+ul, ol { padding-left: 20px; margin-bottom: 10px; }
+li { font-size: 10pt; line-height: 1.65; margin-bottom: 4px; color: #222; }
+strong { font-weight: 600; }
+a { color: #27474D; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 9.5pt; }
+th {
+  font-family: 'Space Mono', monospace;
+  font-size: 6.5pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: #111;
+  color: #fff;
+  font-weight: 700;
+  text-align: left;
+  padding: 8px 12px;
+}
+td { padding: 8px 12px; border-bottom: 1px solid #e8e8e8; vertical-align: top; line-height: 1.55; }
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: #fafafa; }
+.step-num { font-family: 'Space Mono', monospace; font-size: 8pt; font-weight: 700; color: #27474D; white-space: nowrap; }
+.step-action { font-weight: 600; font-size: 9.5pt; display: block; margin-bottom: 3px; }
+.step-detail { font-size: 9pt; color: #555; display: block; }
+.maker { display: inline-block; font-family: 'Space Mono', monospace; font-size: 6pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; background: #e8f0fe; color: #174ea6; }
+.checker { display: inline-block; font-family: 'Space Mono', monospace; font-size: 6pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; background: #fce8e6; color: #c5221f; }
+.notice { border-left: 3px solid; padding: 10px 14px; margin: 14px 0; font-size: 9.5pt; line-height: 1.6; }
+.notice-warn { border-color: #f5c542; background: #fffcf0; color: #5a3e00; }
+.notice-alert { border-color: #c5221f; background: #fff5f5; color: #7c1010; }
+.mono { font-family: 'Space Mono', monospace; font-size: 8.5pt; color: #27474D; font-weight: 700; }
+.xref { background: #f5f5f5; border: 1px solid #e0e0e0; padding: 12px 16px; margin: 16px 0; font-size: 9pt; }
+.xref-label { font-family: 'Space Mono', monospace; font-size: 6.5pt; letter-spacing: 0.16em; text-transform: uppercase; color: #999; margin-bottom: 6px; }
+.xref-item { font-family: 'Space Mono', monospace; font-size: 8.5pt; font-weight: 700; color: #27474D; }
+.rev-table th { background: #f0f0f0; color: #111; }
+@media print { html { background: white; } body { width: 100%; margin: 0; box-shadow: none; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="doc-header">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1602.14 586.87" height="24" style="display:block;"><polygon points="474.94 371.81 694.38 371.81 694.38 320.83 474.94 320.83 474.94 184.06 727.34 184.06 727.34 133.09 416.51 133.09 416.51 575.71 733.55 575.71 733.55 524.74 474.94 524.74 474.94 371.81"/><path d="M1441.79,133.12h-62.16l-169.15,442.55h62.82l51.03-135.47,18-51.03,67.08-183.39h1.3l63.46,183.39,18,51.03,47.27,135.47h62.69l-160.34-442.55Z"/><path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z"/><path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z"/><path d="M965.68,381.82h137.75v129.49c-10.38,6.49-21.85,11.63-34.51,15.59-19.29,6.09-40.54,9.07-63.72,9.07-27.33,0-51.03-5.05-71.23-15.28-20.07-10.1-36.65-23.7-49.73-40.67-12.95-16.97-22.66-36.78-28.88-59.06-6.22-22.41-9.33-45.85-9.33-70.33s3.63-46.11,10.88-67.74c7.25-21.5,17.74-40.41,31.47-56.6,13.6-16.19,30.3-29.01,49.99-38.85,19.69-9.71,41.96-14.63,66.82-14.63,21.12,0,39.89,2.46,56.21,7.25,16.45,4.79,30.56,11.27,42.61,19.56,8.28,5.7,16.7,12.56,23.96,20.08l33.41-43.52c-9.45-8.81-21.11-16.84-29.14-21.76-18-11.01-37.68-18.52-59.31-24.09-21.5-5.7-44.17-8.42-67.74-8.42-35.62,0-67.22,6.73-94.8,20.2-27.58,13.47-50.9,31.21-69.94,53.1-19.04,22.02-33.42,46.88-43.13,74.6-9.84,27.84-14.63,55.95-14.63,84.57,0,34.45,5.05,65.92,15.15,94.54,10.23,28.49,24.87,53.1,44.17,73.56,19.29,20.59,42.74,36.39,70.2,47.66,27.58,11.14,58.54,16.71,92.99,16.71,31.09,0,65.15-2.59,92.73-12.95,2.48-.88,5.08-1.96,7.76-3.17h0c.16-.07.32-.14.48-.22.19-.09.38-.17.58-.26,16.42-7.43,35.61-19.49,51.54-35.86v-207.45h-192.61v54.86Z"/></svg>
+  <div class="header-label">Vega Private Equity LLC<br>procedures.vegarei.com</div>
+</header>
+
+<div class="title-block">
+  <div class="sop-id">DIST-SOP-001</div>
+  <div class="sop-title">Monthly Investor Distributions</div>
+  <div class="sop-scope">End-to-end process for preparing, sending, reviewing, and logging monthly distributions to all Vega Assisted Living Fund II, L.P. investors.</div>
+</div>
+
+<div class="meta-block">
+  <p><strong>Version:</strong> 1.0</p>
+  <p><strong>Effective:</strong> March 31, 2026</p>
+  <p><strong>Category:</strong> Investor Relations</p>
+  <p><strong>Owner:</strong> Fund Operations</p>
+  <p><strong>Maker:</strong> J Jones</p>
+  <p><strong>Checker:</strong> Margaret McCann</p>
+  <p><strong>Review Cycle:</strong> Quarterly + Material Change</p>
+  <p><strong>Classification:</strong> Internal / Confidential</p>
+</div>
+
+<div class="doc-body">
+
+<h2>1. Overview</h2>
+<p>Vega Assisted Living Fund II, L.P. pays monthly distributions to all limited partners. Distributions are classified as Preferred Return. This SOP covers the full cycle: preparing payment files, executing payments through Mountain America Credit Union (MACU), second-party review, logging in Syndication Pro, updating the <a href="MASTER_SHEET_LINK_HERE">Distribution Master Sheet</a>, and submitting DTCC AIP activity records for specified custody investors.</p>
+
+<div class="sub-label">1.1 Distribution Date</div>
+<p>Distributions are sent on the first business day of each month. If the first of the month falls on a weekend or federal holiday, distributions are sent on the next business day. Payment is initiated and submitted by Maker on the distribution date. Wire and ACH cut-off times at MACU must be observed.</p>
+
+<div class="sub-label">1.2 Payment Methods</div>
+<table>
+  <thead><tr><th>Method</th><th>Platform</th><th>Used For</th></tr></thead>
+  <tbody>
+    <tr><td>ACH</td><td>MACU Business ACH</td><td>Majority of investors (direct bank accounts)</td></tr>
+    <tr><td>Wire</td><td>MACU Business Wires</td><td>Custodied investors (Schwab/Inspira) and others requiring wire delivery</td></tr>
+    <tr><td>Check / Billpay</td><td>MACU Billpay</td><td>Investors receiving physical check (currently: Ben Nelson / 2245 Holdings LLC)</td></tr>
+  </tbody>
+</table>
+
+<div class="sub-label">1.3 Source of Truth</div>
+<p>The <a href="MASTER_SHEET_LINK_HERE">Distribution Master Sheet</a> is the source of truth for all investor payment details: amounts, routing numbers, account numbers, entity names, and FFC references. Each month has its own tab. Always work from the current month's tab. Verify amounts against subscription documents before sending if any investor's amount has changed.</p>
+
+<h2>2. Preparation</h2>
+
+<div class="phase">
+  <span class="phase-num">PHASE 1</span>
+  <span class="phase-title">Confirm Amounts &amp; Prepare Master Sheet</span>
+  <span class="phase-note">Complete before distribution date</span>
+</div>
+
+<table>
+  <thead><tr><th style="width:55px;">Step</th><th>Action</th><th style="width:80px;">Role</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="step-num">01</span></td>
+      <td>
+        <span class="step-action">Open the Distribution Master Sheet and create or verify the current month's tab</span>
+        <span class="step-detail">Naming convention: "[Month] [YYYY]" (e.g., "April 2026"). Copy the prior month's tab as a starting point. Do not delete prior month tabs. They are the historical record.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">02</span></td>
+      <td>
+        <span class="step-action">Confirm distribution amounts for all investors</span>
+        <span class="step-detail">Amounts are based on each investor's committed capital at the applicable preferred return rate. For new investors, apply the cutoff rule: if the investor funded before the 15th of the month, include them in that month's distribution. If they funded on or after the 15th, their first distribution begins the following month. Verify all new investor amounts against their subscription documents before populating the sheet.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">03</span></td>
+      <td>
+        <span class="step-action">Verify all bank details are current: routing numbers, account numbers, entity names, FFC references for wire investors</span>
+        <span class="step-detail">Do not assume prior month details are correct. For new investors, pull banking information directly from their subscription documents and confirm with them prior to their first distribution.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">04</span></td>
+      <td>
+        <span class="step-action">Confirm the addenda line at the bottom of the tab matches the current month</span>
+        <span class="step-detail">Format: VEGA ALF II - [Month] [Year] Distribution (e.g., "VEGA ALF II - Apr 2026 Distribution"). This is used as the ACH company entry description and the Syndication Pro memo.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. ACH Payments</h2>
+<p>Log into Mountain America Credit Union online banking. Navigate to Business ACH.</p>
+
+<div class="phase">
+  <span class="phase-num">PHASE 2</span>
+  <span class="phase-title">Create ACH Template &amp; Submit</span>
+  <span class="phase-note">MACU Business ACH</span>
+</div>
+
+<table>
+  <thead><tr><th style="width:55px;">Step</th><th>Action</th><th style="width:80px;">Role</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="step-num">01</span></td>
+      <td>
+        <span class="step-action">In Business ACH, click "+ New Template"</span>
+        <span class="step-detail">Do not reuse a prior month's template. Create a new one each month to maintain a clean audit trail.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">02</span></td>
+      <td>
+        <span class="step-action">Fill in the template fields</span>
+        <span class="step-detail">
+          Template Name: [Month] [Year] ALF 2 Distribution (e.g., "April 2026 ALF 2 Distribution")<br>
+          Offset Account: VEGA FUND II CHK ****8204-S0050<br>
+          Company Name: VEGA ASSISTED<br>
+          Transaction Type: Business Payments (CCD, Credits)<br>
+          Company Entry Description: Distribute<br>
+          Access Level: Normal
+        </span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">03</span></td>
+      <td>
+        <span class="step-action">Click "Create Template" then "Add Payees"</span>
+        <span class="step-detail">Add one payee per investor from the ACH section of the Distribution Master Sheet. Enter: Name on Account, Routing Number, Account Number, Amount.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">04</span></td>
+      <td>
+        <span class="step-action">Set the Send On date to the distribution date (first business day of the month)</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">05</span></td>
+      <td>
+        <span class="step-action">Review all payees and amounts against the Master Sheet before submitting</span>
+        <span class="step-detail">Confirm total dollar amount matches the sum of all ACH investors in the Master Sheet.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">06</span></td>
+      <td>
+        <span class="step-action">Submit the ACH batch</span>
+        <span class="step-detail">Note the submission confirmation number. Record the payment date in the Master Sheet "Paid" field.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>4. Wire Payments</h2>
+<p>Navigate to Business Wires in MACU online banking. Wires are sent individually, one wire per investor. Current wire investors are listed in the Wires section of the Distribution Master Sheet.</p>
+
+<div class="notice notice-alert">
+  <strong>Wire cut-off:</strong> MACU wire cut-off is 4:00 PM Mountain Standard Time. Wires submitted after this time will process on the next business day. Submit wires early on distribution day.
+</div>
+
+<div class="phase">
+  <span class="phase-num">PHASE 3</span>
+  <span class="phase-title">Submit Wire Payments</span>
+  <span class="phase-note">MACU Business Wires — 4:00 PM MST cut-off</span>
+</div>
+
+<table>
+  <thead><tr><th style="width:55px;">Step</th><th>Action</th><th style="width:80px;">Role</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="step-num">01</span></td>
+      <td>
+        <span class="step-action">In Business Wires, select the investor from the Payee dropdown or enter manually</span>
+        <span class="step-detail">If the payee is not saved, click "Enter payee manually" and enter their wire details from the Master Sheet.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">02</span></td>
+      <td><span class="step-action">Set Funding Account to VEGA FUND II CHK</span></td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">03</span></td>
+      <td><span class="step-action">Enter the distribution amount from the Master Sheet</span></td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">04</span></td>
+      <td><span class="step-action">Set Send On date to the distribution date</span></td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">05</span></td>
+      <td>
+        <span class="step-action">Enter Wire Purpose (max 30 characters)</span>
+        <span class="step-detail">Format: Vega ALF II - [Month Abbrev] [Year] Dist<br>Example: <span class="mono">Vega ALF II - Apr 2026 Dist</span></span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">06</span></td>
+      <td>
+        <span class="step-action">Enter Originator to Beneficiary Info (FFC field)</span>
+        <span class="step-detail">For custodied investors, enter the FFC reference exactly as listed in the Master Sheet Notes column.<br>Example: <span class="mono">FFC: Kelly W Buchanan &amp; Jennifer Buchanan Family Living Trust Custody xxxx21178</span></span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">07</span></td>
+      <td>
+        <span class="step-action">Review the Payment Summary — verify payee, account, routing, amount, and FFC — then click "Confirm Payment"</span>
+        <span class="step-detail">Record the Submission Confirmation number from the Wire Payment Details screen.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">08</span></td>
+      <td><span class="step-action">Repeat Steps 01 through 07 for each wire investor</span></td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>5. Check / Billpay</h2>
+
+<div class="phase">
+  <span class="phase-num">PHASE 4</span>
+  <span class="phase-title">Submit Billpay Check</span>
+  <span class="phase-note">MACU Billpay</span>
+</div>
+
+<table>
+  <thead><tr><th style="width:55px;">Step</th><th>Action</th><th style="width:80px;">Role</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="step-num">01</span></td>
+      <td>
+        <span class="step-action">In MACU, navigate to Billpay and locate the payee</span>
+        <span class="step-detail">Current check recipient: Ben Nelson / 2245 Holdings LLC, 45 Pier Place, Stansbury Park, UT 84074.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">02</span></td>
+      <td>
+        <span class="step-action">Enter the distribution amount and set the Send On date</span>
+        <span class="step-detail">Allow adequate mailing time. Schedule at least 3 to 5 business days before the check must be received if timing is critical.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">03</span></td>
+      <td>
+        <span class="step-action">Submit and note the confirmation number</span>
+        <span class="step-detail">Add a note in the Master Sheet Notes column: "Mailed [date] via Billpay."</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>6. Checker Review</h2>
+
+<div class="phase">
+  <span class="phase-num">PHASE 5</span>
+  <span class="phase-title">Second-Party Review</span>
+  <span class="phase-note">Margaret McCann, margaret@vegarei.com, or designated reviewer</span>
+</div>
+
+<p>After all payments are submitted, the Checker independently reviews all submissions in the MACU portal before they process. This is a hard control. No month's distribution is considered complete without Checker sign-off.</p>
+
+<table>
+  <thead><tr><th style="width:55px;">Step</th><th>Action</th><th style="width:80px;">Role</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="step-num">01</span></td>
+      <td>
+        <span class="step-action">Notify Checker that all payments have been submitted and are ready for review</span>
+        <span class="step-detail">Provide Checker with the current month's Distribution Master Sheet tab and MACU portal access if needed.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">02</span></td>
+      <td>
+        <span class="step-action">Review ACH batch in MACU: verify all payees, amounts, and account numbers against the Master Sheet</span>
+        <span class="step-detail">Check: correct payee name, correct account number, correct amount, correct send date.</span>
+      </td>
+      <td><span class="checker">Checker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">03</span></td>
+      <td>
+        <span class="step-action">Review each wire under Business Wires — Scheduled: verify payee, amount, wire purpose, FFC reference, and send date</span>
+      </td>
+      <td><span class="checker">Checker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">04</span></td>
+      <td><span class="step-action">Verify Billpay check amount and payee</span></td>
+      <td><span class="checker">Checker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">05</span></td>
+      <td>
+        <span class="step-action">Confirm total of all payments matches the expected total distribution amount</span>
+        <span class="step-detail">Expected total = sum of all investor amounts in the current month's Master Sheet tab.</span>
+      </td>
+      <td><span class="checker">Checker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">06</span></td>
+      <td>
+        <span class="step-action">If any discrepancy is found, notify Maker immediately before payments process</span>
+        <span class="step-detail">Payments can be cancelled in MACU if caught before the processing cut-off. Do not allow payments to process with unresolved discrepancies.</span>
+      </td>
+      <td><span class="checker">Checker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">07</span></td>
+      <td><span class="step-action">Confirm review is complete to Maker</span></td>
+      <td><span class="checker">Checker</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>7. Syndication Pro: Log Distributions</h2>
+<p>After payments are submitted and reviewed, log the distribution in Syndication Pro so it appears on investor reporting. This step uses a CSV import. The sample CSV template is downloaded directly from Syndication Pro. A copy of the blank sample file and each month's final submitted file are maintained in Google Drive under Phase 3 — Distributions for reference.</p>
+
+<div class="notice notice-warn">
+  <strong>Important:</strong> Syndication Pro has three action buttons. You must use <strong>Publish</strong> only. Do not click "Publish and Notify" (sends emails to investors). Do not click "Proceed to Payments" (payments are handled in MACU, not Syndication Pro).
+</div>
+
+<div class="phase">
+  <span class="phase-num">PHASE 6</span>
+  <span class="phase-title">Log in Syndication Pro</span>
+  <span class="phase-note">vega.invportal.com/admin/dashboard</span>
+</div>
+
+<table>
+  <thead><tr><th style="width:55px;">Step</th><th>Action</th><th style="width:80px;">Role</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="step-num">01</span></td>
+      <td>
+        <span class="step-action">Download the sample CSV from Syndication Pro or open the prior month's submitted file from Google Drive (Phase 3 — Distributions)</span>
+        <span class="step-detail">In Syndication Pro: Portfolio — Vega Assisted Living Fund II — Distributions — Add Distribution — Download Sample File. File name: <span class="mono">Vega Assisted Living Fund II-SampleFile.csv</span>. If using a prior month's file, clear the Amount and date fields and update for the current month.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">02</span></td>
+      <td>
+        <span class="step-action">Update the CSV for the current month</span>
+        <span class="step-detail">
+          Memo: VEGA ALF II - [Month] [Year] Distribution<br>
+          Amount: Each investor's distribution amount from the Master Sheet<br>
+          Start Date / End Date / Payment Date: Distribution date in format <span class="mono">MMM-DD-YYYY</span> (e.g., Apr-01-2026)<br>
+          Distribution Type: <span class="mono">Preferred Return</span> (must match exactly)<br>
+          All other columns remain as-is from the template.
+        </span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">03</span></td>
+      <td><span class="step-action">Save the file as CSV (UTF-8 encoding, max 15 MB)</span></td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">04</span></td>
+      <td><span class="step-action">In Syndication Pro: Portfolio — Vega Assisted Living Fund II — Distributions tab — Add Distribution</span></td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">05</span></td>
+      <td>
+        <span class="step-action">In the Import Distributions dialog, select date format: MMM-DD-YYYY (JAN-15-2016)</span>
+        <span class="step-detail">This must match the date format in your CSV. Using the wrong format will cause import errors.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">06</span></td>
+      <td>
+        <span class="step-action">Upload the CSV and click "Upload for Review"</span>
+        <span class="step-detail">Verify: correct number of investors, correct amounts, correct memo, correct dates, Distribution Type = Preferred Return for all rows.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">07</span></td>
+      <td>
+        <span class="step-action">Click Publish</span>
+        <span class="step-detail">Do not click "Publish and Notify." Do not click "Proceed to Payments." Click Publish only.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="sub-label">7.1 CSV Column Reference</div>
+<p>Do not add or remove columns. Column order must remain exactly as shown in the sample file.</p>
+<table>
+  <thead><tr><th>Column</th><th>Description</th><th style="width:120px;">Update Monthly?</th></tr></thead>
+  <tbody>
+    <tr><td>First Name</td><td>Investor first name</td><td>No</td></tr>
+    <tr><td>Last Name</td><td>Investor last name</td><td>No</td></tr>
+    <tr><td>Profile Name</td><td>Entity / account name as it appears in Syndication Pro</td><td>No</td></tr>
+    <tr><td>Investor Class</td><td>Class A (all Fund II investors)</td><td>No</td></tr>
+    <tr><td>Funded Amount</td><td>Total capital funded by investor</td><td>No</td></tr>
+    <tr><td>Committed Amount</td><td>Total capital committed by investor</td><td>No</td></tr>
+    <tr><td>Funded Date</td><td>Date investor's capital was funded</td><td>No</td></tr>
+    <tr><td><strong>Start Date</strong></td><td>Distribution period start — set to distribution date (MMM-DD-YYYY)</td><td>Yes</td></tr>
+    <tr><td><strong>End Date</strong></td><td>Distribution period end — set to distribution date (MMM-DD-YYYY)</td><td>Yes</td></tr>
+    <tr><td><strong>Payment Date</strong></td><td>Date payment was made (MMM-DD-YYYY)</td><td>Yes</td></tr>
+    <tr><td><strong>Memo</strong></td><td>VEGA ALF II - [Month] [Year] Distribution</td><td>Yes</td></tr>
+    <tr><td><strong>Amount</strong></td><td>Investor's distribution amount</td><td>Yes</td></tr>
+    <tr><td>Distribution Type</td><td>Preferred Return (must match exactly — verify each month)</td><td>No</td></tr>
+    <tr><td>% Funded</td><td>Investor's funded percentage of fund</td><td>No</td></tr>
+    <tr><td>% Ownership</td><td>Investor's ownership percentage</td><td>No</td></tr>
+  </tbody>
+</table>
+
+<h2>8. DTCC AIP: Activity &amp; Distribution Reporting</h2>
+<p>For investors custodied at Charles Schwab, each distribution must also be reported to Schwab via a DTCC AIP Activity and Distribution record (Record Type 050). This is in addition to, not instead of, the wire payment. Refer to DTCC-SOP-001 for the full DTCC AIP reporting process. Note: DTCC-SOP-001 is currently being updated and will be re-uploaded to Drive.</p>
+
+<div class="phase">
+  <span class="phase-num">PHASE 7</span>
+  <span class="phase-title">Submit DTCC AIP Distribution Records</span>
+  <span class="phase-note">Refer to DTCC-SOP-001 for full field-by-field instructions</span>
+</div>
+
+<table>
+  <thead><tr><th style="width:55px;">Step</th><th>Action</th><th style="width:80px;">Role</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="step-num">01</span></td>
+      <td>
+        <span class="step-action">Identify all Schwab-custodied investors receiving distributions this month</span>
+        <span class="step-detail">Currently: Chase Benson (Schwab acct 54087362), Elissa Oleole (Schwab acct 92407189), Buchanan Trust (Schwab acct xxxx21178). Verify against subscription documents if any new investors have been added.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">02</span></td>
+      <td>
+        <span class="step-action">Open ExcelMacro_v19.xlsm on the Windows PC and navigate to the Activity&amp;Distribution tab</span>
+        <span class="step-detail">Enter one row per distribution per investor. See DTCC-SOP-001 Section 5 for all required field values.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">03</span></td>
+      <td>
+        <span class="step-action">Use the Control Number format: VEGAII-DIST-YYYYMMDD</span>
+        <span class="step-detail">If multiple investors on the same date, append a letter suffix: VEGAII-DIST-20260401A, VEGAII-DIST-20260401B, etc.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">04</span></td>
+      <td>
+        <span class="step-action">Run the macro, generate the CSV, upload to DTCC AIP portal at aip.dtcc.com, and confirm all records accepted</span>
+        <span class="step-detail">Verify: all records Accepted, 0 Rejected. Refer to DTCC-SOP-001 for full step-by-step instructions.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">05</span></td>
+      <td>
+        <span class="step-action">Email Schwab Alternative Investments Operations confirming distributions were submitted</span>
+        <span class="step-detail">Include: investor names, distribution amounts, settlement date, and DTCC submission confirmation reference.</span>
+      </td>
+      <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">06</span></td>
+      <td><span class="step-action">Verify Schwab acknowledges receipt within 2 business days</span></td>
+      <td><span class="checker">Checker</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="xref">
+  <div class="xref-label">Cross-Reference</div>
+  <div class="xref-item">DTCC-SOP-001 — DTCC AIP Reporting (full field-by-field instructions)</div>
+</div>
+
+<h2>9. Monthly Completion Checklist</h2>
+<p>Before closing out the month's distribution, confirm all of the following are complete.</p>
+<table>
+  <thead><tr><th>Item</th><th style="width:100px;">Verified By</th></tr></thead>
+  <tbody>
+    <tr><td>ACH batch submitted and confirmed in MACU</td><td>Maker</td></tr>
+    <tr><td>All wires submitted and confirmed in MACU</td><td>Maker</td></tr>
+    <tr><td>Billpay check submitted</td><td>Maker</td></tr>
+    <tr><td>All payments reviewed in MACU by Checker</td><td>Checker</td></tr>
+    <tr><td>All payments processed (no rejections or returns)</td><td>Checker</td></tr>
+    <tr><td>Distribution logged in Syndication Pro (Publish clicked)</td><td>Maker</td></tr>
+    <tr><td>Syndication Pro distribution verified in Distributions tab</td><td>Checker</td></tr>
+    <tr><td>DTCC AIP Activity and Distribution records submitted for Schwab investors</td><td>Maker</td></tr>
+    <tr><td>Schwab confirmation received</td><td>Checker</td></tr>
+    <tr><td>Paid date recorded in Master Sheet (bottom of month tab)</td><td>Maker</td></tr>
+  </tbody>
+</table>
+
+<h2>10. Key Contacts</h2>
+<table>
+  <thead><tr><th>Party</th><th>Contact</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Maker</td><td>J Jones, j@vegarei.com</td><td>Prepares and submits all payments</td></tr>
+    <tr><td>Checker</td><td>Margaret McCann, margaret@vegarei.com</td><td>Reviews all MACU submissions; also handles TIC distributions</td></tr>
+    <tr><td>DTCC Support</td><td>Michael Alejandro, DTCC C&amp;SS Client Support. Reference NSCC # 00001RLY25301001 on all communications.</td><td>DTCC AIP platform issues, upload errors, record rejections</td></tr>
+    <tr><td>Schwab Alt Investments</td><td>Schwab Alternative Investments Operations team. Routing through custodian contact on file.</td><td>Schwab-side confirmation of wire and DTCC submissions</td></tr>
+  </tbody>
+</table>
+
+<h2>11. Review Schedule</h2>
+<p>This SOP is reviewed quarterly at the end of each calendar quarter (March 31, June 30, September 30, December 31) and immediately upon any material change to the investor roster, payment methods, MACU banking setup, Syndication Pro platform, or DTCC AIP requirements. Recurring calendar reminders are set on j@vegarei.com for each quarterly review date.</p>
+
+<h2>12. Revision History</h2>
+<table class="rev-table">
+  <thead><tr><th style="width:60px;">Version</th><th style="width:110px;">Date</th><th style="width:120px;">Author</th><th>Changes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>1.0</td>
+      <td>03/31/2026</td>
+      <td>J Jones</td>
+      <td>Initial publication. Documents full monthly distribution cycle: ACH batch, wire payments, Billpay, Checker review, Syndication Pro CSV import, DTCC AIP Activity reporting for Schwab investors.</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
+</body>
+</html>
