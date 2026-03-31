@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, createGoogleDoc, addSopToIndex, getReviewStatus, getCompanyFolder, getCategoryFolder, cacheFolderIds, findUnindexedFiles } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
-import { DEFAULT_SOP_HTML } from '../lib/sopTemplate'
+import { DEFAULT_SOP_HTML, generateSopHtml, wrapContentInTemplate } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
 import CreateSopDialog from '../components/CreateSopDialog'
 import ImportFromDrive from '../components/ImportFromDrive'
@@ -119,8 +119,24 @@ export default function CompanySops() {
     if (!token) return
     setCreating(true)
     try {
-      // Use uploaded HTML if provided, otherwise default template
-      const sopHtml = uploadedHtml || DEFAULT_SOP_HTML
+      // Use uploaded HTML directly, wrap text uploads in template, or generate blank template
+      let sopHtml
+      if (uploadedHtml) {
+        sopHtml = uploadedHtml
+      } else if (description) {
+        // Plain text content from AI or text upload — wrap in Vega template
+        sopHtml = wrapContentInTemplate({
+          sopId, title, category: CATEGORIES[category]?.label || category,
+          owner: owner || user?.name || '', author: user?.name || '',
+          reviewCadence: reviewCadence || 'Quarterly', content: description,
+        })
+      } else {
+        sopHtml = generateSopHtml({
+          sopId, title, category: CATEGORIES[category]?.label || category,
+          owner: owner || user?.name || '', author: user?.name || '',
+          reviewCadence: reviewCadence || 'Quarterly',
+        })
+      }
 
       // Get (or create) the category folder in Drive
       // Standard Operating Procedures / {Business Unit} / {Category}
