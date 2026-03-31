@@ -214,6 +214,8 @@ export default function SopView() {
       setMeta(updatedMeta)
       setIndex(updatedIndex)
       setSopEntry(prev => ({ ...prev, status: 'archived' }))
+      // Navigate back to the business unit list
+      navigate(`/${sopEntry.company}`)
     } catch (err) {
       console.error(err)
       alert('Failed to archive. Check Drive permissions.')
