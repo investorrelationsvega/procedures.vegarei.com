@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
@@ -12,10 +12,14 @@ import SOPEditor from '../components/SOPEditor'
 import AuditLog from '../components/AuditLog'
 import VegaStar from '../components/VegaStar'
 
+function userName(user) {
+  return user?.name || user?.email || 'Unknown User'
+}
 
 export default function SopView() {
   const { id } = useParams()
   const { token, user, isAuthed } = useAuth()
+  const navigate = useNavigate()
 
   const [sopEntry, setSopEntry]     = useState(null)
   const [html, setHtml]             = useState('')
@@ -97,7 +101,7 @@ export default function SopView() {
       const event = {
         action: 'review-completed',
         date: new Date().toISOString(),
-        user: user?.name || user?.email || 'Unknown User',
+        user: userName(user),
         email: user?.email || '',
       }
       const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
@@ -118,12 +122,59 @@ export default function SopView() {
     }
   }, [sopEntry, token, index, meta, user])
 
+  const handleArchive = useCallback(async () => {
+    if (!sopEntry || !token || !index) return
+    if (!confirm(`Archive "${sopEntry.title}"? It will be hidden from the main list but can be restored.`)) return
+    setSaving(true)
+    try {
+      const event = {
+        action: 'archived',
+        date: new Date().toISOString(),
+        user: userName(user),
+        email: user?.email || '',
+      }
+      const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+      const updatedIndex = await updateSopInIndex(index, sopEntry.id, { status: 'archived' }, token)
+      setMeta(updatedMeta)
+      setIndex(updatedIndex)
+      setSopEntry(prev => ({ ...prev, status: 'archived' }))
+    } catch (err) {
+      console.error(err)
+      alert('Failed to archive. Check Drive permissions.')
+    } finally {
+      setSaving(false)
+    }
+  }, [sopEntry, token, index, meta, user])
+
+  const handleRestore = useCallback(async () => {
+    if (!sopEntry || !token || !index) return
+    setSaving(true)
+    try {
+      const event = {
+        action: 'restored',
+        date: new Date().toISOString(),
+        user: userName(user),
+        email: user?.email || '',
+      }
+      const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+      const updatedIndex = await updateSopInIndex(index, sopEntry.id, { status: 'active' }, token)
+      setMeta(updatedMeta)
+      setIndex(updatedIndex)
+      setSopEntry(prev => ({ ...prev, status: 'active' }))
+    } catch (err) {
+      console.error(err)
+      alert('Failed to restore. Check Drive permissions.')
+    } finally {
+      setSaving(false)
+    }
+  }, [sopEntry, token, index, meta, user])
+
   const handlePrint = useCallback(async () => {
     if (sopEntry?.metaFileId && token) {
       const event = {
         action: 'print',
         date: new Date().toISOString(),
-        user: user?.name || user?.email || 'Unknown User',
+        user: userName(user),
         email: user?.email || '',
       }
       const updated = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
@@ -137,7 +188,7 @@ export default function SopView() {
       const event = {
         action: 'download',
         date: new Date().toISOString(),
-        user: user?.name || user?.email || 'Unknown User',
+        user: userName(user),
         email: user?.email || '',
       }
       const updated = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
@@ -220,12 +271,32 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
               </button>
             )}
 
-            {isAuthed && (
+            {isAuthed && sopEntry?.status !== 'archived' && (
               <button
                 onClick={() => setEditing(true)}
                 className="text-xs font-mono bg-black text-white px-3 py-1.5 hover:bg-[#27474D] transition-colors"
               >
                 Edit
+              </button>
+            )}
+
+            {isAuthed && sopEntry && sopEntry.status !== 'archived' && (
+              <button
+                onClick={handleArchive}
+                disabled={saving}
+                className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors text-[#797469]"
+              >
+                Archive
+              </button>
+            )}
+
+            {isAuthed && sopEntry?.status === 'archived' && (
+              <button
+                onClick={handleRestore}
+                disabled={saving}
+                className="text-xs font-mono bg-black text-white px-3 py-1.5 hover:bg-[#27474D] transition-colors"
+              >
+                Restore
               </button>
             )}
           </div>
@@ -271,6 +342,26 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
           </div>
         )
       })()}
+
+      {/* Archived banner */}
+      {sopEntry?.status === 'archived' && (
+        <div className="border-b bg-gray-50 border-gray-200">
+          <div className="max-w-screen-xl mx-auto px-8 py-2.5 flex items-center gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[#797469]">
+              This SOP has been archived
+            </span>
+            {isAuthed && (
+              <button
+                onClick={handleRestore}
+                disabled={saving}
+                className="ml-auto text-[10px] font-mono uppercase tracking-wider border border-gray-300 text-black px-3 py-1 hover:bg-black hover:text-white transition-colors"
+              >
+                Restore
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="max-w-screen-xl mx-auto px-8 py-10">

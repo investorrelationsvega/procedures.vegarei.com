@@ -190,21 +190,24 @@ export default function CompanySops() {
     }
   }, [token, user, index, navigate])
 
-  // Filter SOPs for this company
-  const companySops = index?.sops?.filter(s => s.company === company) || []
+  // Filter SOPs for this company — separate active from archived
+  const allCompanySops = index?.sops?.filter(s => s.company === company) || []
+  const companySops = allCompanySops.filter(s => s.status !== 'archived')
+  const archivedSops = allCompanySops.filter(s => s.status === 'archived')
 
   const filtered = useMemo(() => {
-    let result = companySops.filter(s => {
+    const source = activeFilter === 'archived' ? archivedSops : companySops
+    let result = source.filter(s => {
       const matchesSearch = search === '' ||
         s.title.toLowerCase().includes(search.toLowerCase()) ||
         s.id.toLowerCase().includes(search.toLowerCase())
-      const matchesFilter = activeFilter === 'all' || s.category === activeFilter
+      const matchesFilter = activeFilter === 'all' || activeFilter === 'archived' || s.category === activeFilter
       return matchesSearch && matchesFilter
     })
     return sortSops(result, sortBy)
-  }, [companySops, search, activeFilter, sortBy])
+  }, [companySops, archivedSops, search, activeFilter, sortBy])
 
-  // Get unique categories that exist in this company's SOPs
+  // Get unique categories that exist in this company's active SOPs
   const activeCategories = [...new Set(companySops.map(s => s.category))]
 
   // Group filtered SOPs by category
@@ -322,6 +325,18 @@ export default function CompanySops() {
                 </button>
               )
             })}
+            {archivedSops.length > 0 && (
+              <button
+                onClick={() => setActiveFilter(activeFilter === 'archived' ? 'all' : 'archived')}
+                className={`px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider border transition-colors ${
+                  activeFilter === 'archived'
+                    ? 'bg-black text-white border-black'
+                    : 'border-dashed border-gray-300 text-[#797469] hover:border-gray-400'
+                }`}
+              >
+                Archived ({archivedSops.length})
+              </button>
+            )}
           </div>
 
           {/* Sort */}
