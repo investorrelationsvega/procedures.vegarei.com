@@ -180,3 +180,297 @@ ${htmlContent}
 }
 
 export const DEFAULT_SOP_HTML = generateSopHtml({})
+
+// ── Reconstruct template structure from plain HTML ──────────
+// When SOP content round-trips through Google Docs, all template
+// CSS classes are stripped.  This function detects the document
+// structure by content patterns and re-wraps it in the canonical
+// template markup so the .sop-document CSS renders correctly.
+
+const SOP_ID_RE = /^[A-Z]{2,5}-[A-Z]{2,5}-\d{3}$/
+const META_LABEL_RE = /^(Version|Effective|Category|Owner|Maker|Checker|Review Cycle|Classification)\s*:/i
+const HEADER_LINES = [
+  'vega private equity llc',
+  'vega assisted living fund',
+  'vega capital markets',
+  'vega builders',
+  'vega development',
+  'vega hospice',
+  'vega property management',
+  'vega valuations',
+  'vega rei',
+  'procedures.vegarei.com',
+]
+const PHASE_RE = /^PHASE\s+(\d+)\s*/i
+const SUB_LABEL_RE = /^\d+\.\d+\s+/
+
+function stripGoogleStyles(html) {
+  // Remove Google Docs inline style attributes and class attributes
+  return html
+    .replace(/\s+style="[^"]*"/gi, '')
+    .replace(/\s+class="[^"]*"/gi, '')
+    .replace(/<span>(.*?)<\/span>/gi, '$1')
+}
+
+function isMetaField(text) {
+  return META_LABEL_RE.test(text.trim())
+}
+
+function parseMetaField(text) {
+  const idx = text.indexOf(':')
+  if (idx === -1) return null
+  return { label: text.substring(0, idx).trim(), value: text.substring(idx + 1).trim() }
+}
+
+export function reconstructTemplate(html) {
+  if (!html) return html
+
+  // If the HTML already has the full template structure, return as-is
+  if (html.includes('doc-header') && html.includes('title-block') && html.includes('doc-body')) {
+    return html
+  }
+
+  // Strip Google's inline styles if present
+  let cleaned = html.includes('docs-internal') || html.includes('style="') ? stripGoogleStyles(html) : html
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(`<div>${cleaned}</div>`, 'text/html')
+  const root = doc.body.firstChild
+  const elements = [...root.children]
+
+  let sopId = ''
+  let title = ''
+  let scope = ''
+  const metaFields = []
+  const bodyElements = []
+  let phase = 'preamble' // preamble | meta | body
+
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i]
+    const text = el.textContent.trim()
+    const textLower = text.toLowerCase()
+
+    // Skip empty elements
+    if (!text) continue
+
+    // Skip header/company name lines
+    if (phase === 'preamble' && HEADER_LINES.includes(textLower)) continue
+
+    // Detect SOP ID
+    if (phase === 'preamble' && !sopId && SOP_ID_RE.test(text)) {
+      sopId = text
+      continue
+    }
+
+    // Detect title — first h1 or first substantial heading/text after SOP ID
+    if (phase === 'preamble' && !title) {
+      const tag = el.tagName
+      if (tag === 'H1' || tag === 'H2' || (sopId && tag === 'P' && text.length > 3 && !isMetaField(text))) {
+        title = text
+        continue
+      }
+    }
+
+    // Detect scope — paragraph after title, before meta fields
+    if (phase === 'preamble' && title && !scope) {
+      if (el.tagName === 'P' && !isMetaField(text) && !SOP_ID_RE.test(text)) {
+        // Only treat as scope if it looks like a description (not a section heading)
+        if (!text.match(/^\d+\.\s/) && text.length > 10) {
+          scope = text
+          continue
+        }
+      }
+    }
+
+    // Detect meta fields
+    if (isMetaField(text)) {
+      phase = 'meta'
+      // Handle both "<strong>Label:</strong> Value" and "Label: Value"
+      const parsed = parseMetaField(text)
+      if (parsed) metaFields.push(parsed)
+      continue
+    }
+
+    // Once we hit a section heading (h2) after finding meta/title, switch to body
+    if (el.tagName === 'H2' && (metaFields.length > 0 || title)) {
+      phase = 'body'
+    }
+
+    // If still in preamble/meta and it's not recognized, push to body
+    if (phase !== 'body' && (el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'TABLE')) {
+      phase = 'body'
+    }
+
+    if (phase === 'body' || (phase !== 'preamble' && phase !== 'meta')) {
+      phase = 'body'
+      bodyElements.push(el)
+    } else {
+      // Unrecognized preamble content — add to body
+      bodyElements.push(el)
+    }
+  }
+
+  // Build the reconstructed HTML
+  let result = ''
+
+  // Header
+  result += `<header class="doc-header">\n  ${VEGA_LOGO_SVG}\n  <div class="header-label">Vega Private Equity LLC<br>procedures.vegarei.com</div>\n</header>\n\n`
+
+  // Title block
+  if (sopId || title) {
+    result += `<div class="title-block">\n`
+    if (sopId) result += `  <div class="sop-id">${sopId}</div>\n`
+    if (title) result += `  <div class="sop-title">${title}</div>\n`
+    if (scope) result += `  <div class="sop-scope">${scope}</div>\n`
+    result += `</div>\n\n`
+  }
+
+  // Meta block
+  if (metaFields.length > 0) {
+    result += `<div class="meta-block">\n`
+    for (const f of metaFields) {
+      result += `  <p><strong>${f.label}:</strong> ${f.value}</p>\n`
+    }
+    result += `</div>\n\n`
+  }
+
+  // Body — enhance elements with template classes
+  result += `<div class="doc-body">\n`
+  for (const el of bodyElements) {
+    result += enhanceElement(el)
+  }
+  result += `</div>`
+
+  return result
+}
+
+function enhanceElement(el) {
+  const tag = el.tagName
+  const text = el.textContent.trim()
+
+  // h2 section headings — already styled by CSS, just output
+  if (tag === 'H2') {
+    return `<h2>${el.innerHTML}</h2>\n`
+  }
+
+  if (tag === 'H3') {
+    return `<h3>${el.innerHTML}</h3>\n`
+  }
+
+  // Detect phase bars: paragraphs or bold text matching "PHASE N ..."
+  if ((tag === 'P' || tag === 'DIV') && PHASE_RE.test(text)) {
+    const match = text.match(PHASE_RE)
+    const num = match[1]
+    const rest = text.substring(match[0].length).trim()
+    // Split remaining into title and note (if separated by — or -)
+    const parts = rest.split(/\s*[—–-]\s*/)
+    const phaseTitle = parts[0] || ''
+    const phaseNote = parts.slice(1).join(' — ') || ''
+    return `<div class="phase">\n  <span class="phase-num">PHASE ${num}</span>\n  <span class="phase-title">${phaseTitle}</span>\n${phaseNote ? `  <span class="phase-note">${phaseNote}</span>\n` : ''}</div>\n`
+  }
+
+  // Detect sub-labels: paragraphs like "1.1 Trigger", "2.3 Key Systems"
+  if (tag === 'P' && SUB_LABEL_RE.test(text) && text.length < 60) {
+    return `<div class="sub-label">${text}</div>\n`
+  }
+
+  // Tables — enhance role badges and step numbers in cells
+  if (tag === 'TABLE') {
+    return enhanceTable(el)
+  }
+
+  // Notice boxes — detect "Note:", "Important:", "Warning:" patterns
+  if (tag === 'P' || tag === 'DIV') {
+    if (text.match(/^(Note|Warning|Caution)\s*:/i)) {
+      return `<div class="notice notice-alert">${el.innerHTML}</div>\n`
+    }
+    if (text.match(/^Important\s*:/i)) {
+      return `<div class="notice notice-warn">${el.innerHTML}</div>\n`
+    }
+    if (text.match(/^(Tip|Info|Context)\s*:/i)) {
+      return `<div class="notice notice-info">${el.innerHTML}</div>\n`
+    }
+  }
+
+  // Cross-reference blocks
+  if ((tag === 'P' || tag === 'DIV') && text.match(/^Related SOPs?\s*$/i)) {
+    return `<div class="xref">\n  <div class="xref-label">${text}</div>\n</div>\n`
+  }
+
+  // Lists
+  if (tag === 'UL' || tag === 'OL') {
+    return el.outerHTML + '\n'
+  }
+
+  // Default: return as-is
+  if (tag === 'P') {
+    return `<p>${el.innerHTML}</p>\n`
+  }
+
+  return el.outerHTML + '\n'
+}
+
+function enhanceTable(tableEl) {
+  const rows = [...tableEl.querySelectorAll('tr')]
+  if (rows.length === 0) return tableEl.outerHTML + '\n'
+
+  // Check if this looks like a revision history table
+  const firstTh = tableEl.querySelector('th')
+  const isRevTable = firstTh && firstTh.textContent.trim().toLowerCase() === 'version'
+
+  // Check if this is a step table (has Step, Action, Role headers)
+  const headers = [...tableEl.querySelectorAll('th')].map(th => th.textContent.trim().toLowerCase())
+  const isStepTable = headers.includes('step') && headers.includes('action')
+
+  let html = `<table${isRevTable ? ' class="rev-table"' : ''}>\n`
+
+  rows.forEach((row, rowIdx) => {
+    html += '<tr>\n'
+    const cells = [...row.querySelectorAll('th, td')]
+
+    cells.forEach((cell, colIdx) => {
+      const isHeader = cell.tagName === 'TH'
+      const tag = isHeader ? 'th' : 'td'
+      let content = cell.innerHTML.trim()
+      const cellText = cell.textContent.trim()
+
+      // Style attributes for step table columns
+      let attrs = ''
+      if (isHeader && isStepTable) {
+        if (colIdx === 0 && headers[0] === 'step') attrs = ' style="width:55px;"'
+        if (headers[colIdx] === 'role') attrs = ' style="width:80px;"'
+      }
+      if (isHeader && isRevTable) {
+        if (headers[colIdx] === 'version') attrs = ' style="width:65px;"'
+        if (headers[colIdx] === 'date') attrs = ' style="width:110px;"'
+        if (headers[colIdx] === 'author') attrs = ' style="width:130px;"'
+      }
+      if (isHeader && headers[colIdx] === 'verified by') attrs = ' style="width:100px;"'
+
+      // Enhance role badges in non-header cells
+      if (!isHeader && isStepTable) {
+        // Step number column
+        if (colIdx === 0 && cellText.match(/^\d{1,3}$/)) {
+          content = `<span class="step-num">${cellText.padStart(2, '0')}</span>`
+        }
+        // Role column — wrap Maker/Checker in badge
+        if (headers[colIdx] === 'role') {
+          if (cellText.match(/^maker$/i)) content = '<span class="maker">Maker</span>'
+          else if (cellText.match(/^checker$/i)) content = '<span class="checker">Checker</span>'
+        }
+      }
+
+      // Also detect Maker/Checker in any table's cells
+      if (!isHeader && !isStepTable) {
+        if (cellText === 'Maker') content = '<span class="maker">Maker</span>'
+        else if (cellText === 'Checker') content = '<span class="checker">Checker</span>'
+      }
+
+      html += `<${tag}${attrs}>${content}</${tag}>\n`
+    })
+    html += '</tr>\n'
+  })
+
+  html += '</table>\n'
+  return html
+}

@@ -8,86 +8,12 @@ import {
 import { fetchDocContent } from '../services/docsService'
 import { exportGoogleDocAsHtml } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
+import { reconstructTemplate } from '../lib/sopTemplate'
 import HistoryPanel from '../components/HistoryPanel'
 import SOPEditor from '../components/SOPEditor'
 import AuditLog from '../components/AuditLog'
 import VegaStar from '../components/VegaStar'
 
-const META_LABELS = ['version', 'effective', 'category', 'owner', 'maker', 'checker', 'review cycle', 'classification']
-
-/**
- * Post-process SOP HTML to clean up meta fields that Google Docs
- * converts from styled divs to plain paragraphs.
- * Handles both formats:
- * - New: <p><strong>Label:</strong> Value</p> (already looks fine, wrap in meta-block)
- * - Legacy: alternating <p>Label</p><p>Value</p> pairs (convert to meta-block)
- */
-function cleanupSopHtml(html) {
-  if (!html) return html
-  // If the HTML already has .meta-block or .meta-strip, it's properly formatted
-  if (html.includes('meta-block') || html.includes('meta-strip')) return html
-  if (html.includes('meta-strip')) return html
-
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html')
-  const root = doc.body.firstChild
-  const paragraphs = [...root.querySelectorAll('p')]
-
-  // Find consecutive paragraphs that match meta label/value pattern
-  let metaStart = -1
-  let metaEnd = -1
-  const metaPairs = []
-
-  for (let i = 0; i < paragraphs.length; i++) {
-    const text = paragraphs[i].textContent.trim().toLowerCase()
-    if (META_LABELS.includes(text)) {
-      if (metaStart === -1) metaStart = i
-      // Next paragraph is the value
-      if (i + 1 < paragraphs.length) {
-        metaPairs.push({
-          label: paragraphs[i].textContent.trim(),
-          value: paragraphs[i + 1].textContent.trim(),
-          labelEl: paragraphs[i],
-          valueEl: paragraphs[i + 1],
-        })
-        metaEnd = i + 1
-        i++ // skip value paragraph
-      }
-    } else if (metaStart !== -1 && metaPairs.length > 0) {
-      break
-    }
-  }
-
-  if (metaPairs.length === 0) return html
-
-  // Build a styled meta strip
-  const strip = doc.createElement('div')
-  strip.className = 'meta-strip'
-  metaPairs.forEach(pair => {
-    const cell = doc.createElement('div')
-    cell.className = 'meta-cell'
-    cell.innerHTML = `<div class="ml">${pair.label}</div><div class="mv">${pair.value}</div>`
-    strip.appendChild(cell)
-  })
-
-  // Replace the label/value paragraphs with the strip
-  metaPairs[0].labelEl.parentNode.insertBefore(strip, metaPairs[0].labelEl)
-  metaPairs.forEach(pair => {
-    pair.labelEl.remove()
-    pair.valueEl.remove()
-  })
-
-  // Also remove "VEGA PRIVATE EQUITY LLC" and "PROCEDURES.VEGAREI.COM" header lines
-  const allPs = [...root.querySelectorAll('p')]
-  allPs.forEach(p => {
-    const t = p.textContent.trim()
-    if (t === 'VEGA PRIVATE EQUITY LLC' || t === 'PROCEDURES.VEGAREI.COM') {
-      p.remove()
-    }
-  })
-
-  return root.innerHTML
-}
 
 function userName(user) {
   return user?.name || user?.email || 'Unknown User'
@@ -133,7 +59,7 @@ export default function SopView() {
             h = await loadSopHtml(entry.htmlFileId, token)
           }
           const m = entry.metaFileId ? await loadSopMeta(entry.metaFileId, token) : null
-          setHtml(cleanupSopHtml(h))
+          setHtml(reconstructTemplate(h))
           setMeta(m)
         } else {
           setHtml(`<p style="font-family:Inter,sans-serif;color:#566F69;font-size:14px;">
@@ -162,7 +88,7 @@ export default function SopView() {
         } catch {
           h = await loadSopHtml(sopEntry.htmlFileId, token)
         }
-        setHtml(h)
+        setHtml(reconstructTemplate(h))
       } catch (err) {
         console.error('Failed to refresh content:', err)
       }
