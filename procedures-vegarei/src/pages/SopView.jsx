@@ -198,6 +198,33 @@ export default function SopView() {
     }
   }, [sopEntry, token, index, meta, user])
 
+  const handlePublish = useCallback(async () => {
+    if (!sopEntry || !token || !index) return
+    setSaving(true)
+    try {
+      const now = new Date().toISOString().split('T')[0]
+      const event = {
+        action: 'published',
+        date: new Date().toISOString(),
+        user: userName(user),
+        email: user?.email || '',
+      }
+      const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
+      const updatedIndex = await updateSopInIndex(index, sopEntry.id, {
+        status: 'active',
+        lastReviewed: now,
+      }, token)
+      setMeta(updatedMeta)
+      setIndex(updatedIndex)
+      setSopEntry(prev => ({ ...prev, status: 'active', lastReviewed: now }))
+    } catch (err) {
+      console.error(err)
+      alert('Failed to publish. Check Drive permissions.')
+    } finally {
+      setSaving(false)
+    }
+  }, [sopEntry, token, index, meta, user])
+
   const handleArchive = useCallback(async () => {
     if (!sopEntry || !token || !index) return
     if (!confirm(`Archive "${sopEntry.title}"? It will be hidden from the main list but can be restored.`)) return
@@ -346,6 +373,16 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
                 className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors"
               >
                 History
+              </button>
+            )}
+
+            {isAuthed && sopEntry?.status === 'draft' && (
+              <button
+                onClick={handlePublish}
+                disabled={saving}
+                className="text-xs font-mono bg-[#22c55e] text-white px-3 py-1.5 hover:bg-[#16a34a] transition-colors"
+              >
+                Publish
               </button>
             )}
 
