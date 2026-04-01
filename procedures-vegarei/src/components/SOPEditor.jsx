@@ -2,12 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { fetchDocContent, saveDocContent } from '../services/docsService'
 import { fetchDriveFile, saveSopHtml, exportGoogleDocAsHtml } from '../lib/drive'
 import { reconstructTemplate } from '../lib/sopTemplate'
-import { checkGrammar, isGeminiAvailable, rewriteForSection } from '../services/geminiService'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
 // ── Section wizard steps ────────────────────────────────────
-// Each step maps to a template section with a question, explanation, and example.
 
 const WIZARD_STEPS = [
   {
@@ -88,6 +86,31 @@ const WIZARD_STEPS = [
     example: 'Quarterly review at the end of each calendar quarter, and immediately if the distribution process, systems, or personnel change.',
   },
 ]
+
+// ── Generate a copy-paste prompt for AI ──────────────────────
+
+function buildPromptForSection(step, sopTitle) {
+  return `I am writing a Standard Operating Procedure (SOP) titled "${sopTitle || 'Untitled'}".
+
+I need you to write the "${step.heading}" section. Here is what this section should cover:
+
+${step.explanation}
+
+Here is an example of what good output looks like:
+${step.example}
+
+Writing rules:
+- Write in direct, imperative, present tense ("Navigate to..." not "The user should navigate to...")
+- Professional but readable tone
+- Do not use em dashes anywhere. Use regular dashes or rewrite the sentence.
+- Be specific and thorough
+- Keep sentences concise
+
+I will provide my rough notes below. Please rewrite them into clean, professional SOP content for this section. Format your response as plain text that I can paste into my SOP editor.
+
+My notes:
+[PASTE YOUR NOTES HERE]`
+}
 
 // ── Parse existing HTML into section content ─────────────────
 
@@ -190,7 +213,6 @@ function reassembleHtml(preamble, sectionContent, revisionHtml) {
       body += `<h2>${step.heading}</h2>\n${sectionContent[step.id]}\n\n`
     }
   }
-  // Always include revision history
   body += `<h2>12. Revision History</h2>\n${revisionHtml || '<table class="rev-table"><thead><tr><th style="width:65px;">Version</th><th style="width:110px;">Date</th><th style="width:130px;">Author</th><th>Changes</th></tr></thead><tbody><tr><td>1.0</td><td></td><td></td><td>Initial publication</td></tr></tbody></table>'}\n`
   return `${preamble}\n<div class="doc-body">\n${body}</div>`
 }
@@ -211,13 +233,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
   // Wizard state
   const [currentStep, setCurrentStep] = useState(0)
   const [userInput, setUserInput] = useState('')
-  const [polishing, setPolishing] = useState(false)
-  const [polishedHtml, setPolishedHtml] = useState(null)
-  const [mode, setMode] = useState('input') // 'input' | 'review'
-
-  // Grammar check state
-  const [checking, setChecking] = useState(false)
-  const [grammarChanges, setGrammarChanges] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   const step = WIZARD_STEPS[currentStep]
   const totalSteps = WIZARD_STEPS.length
@@ -246,16 +262,6 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
         setPreamble(parsed.preamble)
         setSectionContent(parsed.sectionContent)
         setRevisionHtml(parsed.revisionHtml)
-
-        // If first section already has content, pre-fill the text area
-        const firstStep = WIZARD_STEPS[0]
-        if (parsed.sectionContent[firstStep.id]) {
-          const tmp = document.createElement('div')
-          tmp.innerHTML = parsed.sectionContent[firstStep.id]
-          setUserInput(tmp.textContent.trim())
-          setMode('review')
-          setPolishedHtml(parsed.sectionContent[firstStep.id])
-        }
       } catch (err) {
         setError(err.message)
       } finally {
@@ -273,33 +279,37 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
       const tmp = document.createElement('div')
       tmp.innerHTML = existing
       setUserInput(tmp.textContent.trim())
-      setMode('review')
-      setPolishedHtml(existing)
     } else {
       setUserInput('')
-      setMode('input')
-      setPolishedHtml(null)
     }
-    setGrammarChanges(null)
+    setCopied(false)
   }, [currentStep])
 
-  const handlePolish = useCallback(async () => {
-    if (!userInput.trim()) return
-    setPolishing(true)
-    setError(null)
-    try {
-      const result = await rewriteForSection(step.id, userInput, title)
-      setPolishedHtml(result)
-      setMode('review')
-      // Save the polished content
-      setSectionContent(prev => ({ ...prev, [step.id]: result }))
+  const handleCopyPrompt = useCallback(() => {
+    const prompt = buildPromptForSection(step, title)
+    navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [step, title])
+
+  const handleSaveSection = useCallback(() => {
+    if (userInput.trim()) {
+      // Wrap plain text in paragraphs
+      const html = userInput.trim().split(/\n{2,}/).map(p =>
+        `<p>${p.trim().replace(/\n/g, '<br>')}</p>`
+      ).join('\n')
+      setSectionContent(prev => ({ ...prev, [step.id]: html }))
       setDirty(true)
-    } catch (err) {
-      setError('Failed to polish: ' + err.message)
-    } finally {
-      setPolishing(false)
     }
-  }, [userInput, step, title])
+  }, [userInput, step])
+
+  const handleNext = useCallback(() => {
+    handleSaveSection()
+    if (currentStep < totalSteps - 1) {
+      setCurrentStep(prev => prev + 1)
+    }
+  }, [currentStep, totalSteps, handleSaveSection])
 
   const handleSkip = useCallback(() => {
     if (currentStep < totalSteps - 1) {
@@ -307,30 +317,15 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
     }
   }, [currentStep, totalSteps])
 
-  const handleNext = useCallback(() => {
-    // If in input mode with text, polish first
-    if (mode === 'input' && userInput.trim()) {
-      handlePolish()
-      return
-    }
-    // Move to next step
-    if (currentStep < totalSteps - 1) {
-      setCurrentStep(prev => prev + 1)
-    }
-  }, [mode, userInput, currentStep, totalSteps, handlePolish])
-
   const handleBack = useCallback(() => {
+    handleSaveSection()
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1)
     }
-  }, [currentStep])
-
-  const handleEditPolished = useCallback(() => {
-    setMode('input')
-    setPolishedHtml(null)
-  }, [])
+  }, [currentStep, handleSaveSection])
 
   const handleSave = useCallback(async () => {
+    handleSaveSection()
     setSaving(true)
     setError(null)
     try {
@@ -347,31 +342,13 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
     } finally {
       setSaving(false)
     }
-  }, [docId, accessToken, preamble, sectionContent, revisionHtml])
+  }, [docId, accessToken, preamble, sectionContent, revisionHtml, handleSaveSection])
 
   const handleCancel = useCallback(() => {
     if (dirty && !confirm('You have unsaved changes. Discard them?')) return
     onClose()
   }, [dirty, onClose])
 
-  const handleGrammarCheck = useCallback(async () => {
-    if (!polishedHtml) return
-    setChecking(true)
-    setError(null)
-    setGrammarChanges(null)
-    try {
-      const tmp = document.createElement('div')
-      tmp.innerHTML = polishedHtml
-      const result = await checkGrammar(tmp.textContent)
-      setGrammarChanges(result.changes)
-    } catch (err) {
-      setError('Grammar check failed: ' + err.message)
-    } finally {
-      setChecking(false)
-    }
-  }, [polishedHtml])
-
-  // Count filled sections
   const filledCount = Object.keys(sectionContent).length
 
   return (
@@ -382,13 +359,13 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
           {title || 'Edit SOP'}
         </span>
 
-        {/* Progress */}
+        {/* Progress dots */}
         <div className="flex items-center gap-1.5 mr-4">
           {WIZARD_STEPS.map((s, i) => (
             <button
               key={s.id}
-              onClick={() => setCurrentStep(i)}
-              className={`w-2.5 h-2.5 rounded-full transition-colors ${
+              onClick={() => { handleSaveSection(); setCurrentStep(i) }}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
                 i === currentStep
                   ? 'bg-[#27474D] scale-125'
                   : sectionContent[s.id]
@@ -434,7 +411,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
           </div>
         ) : step ? (
           <div className="max-w-2xl mx-auto px-8 py-12">
-            {/* Section heading */}
+            {/* Section label */}
             <div style={mono} className="text-[10px] uppercase tracking-wider text-[#797469] mb-2">
               Section {currentStep + 1} of {totalSteps}
             </div>
@@ -449,149 +426,71 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
             </div>
 
             {/* Example */}
-            <div className="bg-[#f0f5f5] border border-[#27474D]/10 rounded px-4 py-3 mb-6">
+            <div className="bg-[#f0f5f5] border border-[#27474D]/10 rounded px-4 py-3 mb-4">
               <div style={mono} className="text-[9px] uppercase tracking-wider text-[#27474D] font-bold mb-1.5">Example</div>
               <pre className="text-xs text-[#27474D] whitespace-pre-wrap font-sans leading-relaxed">{step.example}</pre>
             </div>
 
-            {/* Input or Review mode */}
-            {mode === 'input' ? (
-              <>
-                <textarea
-                  value={userInput}
-                  onChange={e => setUserInput(e.target.value)}
-                  placeholder="Type your answer here... Be as rough as you want. Gemini will clean it up."
-                  className="w-full border border-gray-300 rounded px-4 py-3 text-sm leading-relaxed focus:outline-none focus:border-[#27474D] transition-colors resize-none"
-                  rows={8}
-                />
+            {/* AI prompt helper */}
+            <div className="bg-[#faf5ff] border border-[#6366f1]/15 rounded px-4 py-3 mb-6 flex items-center justify-between">
+              <div>
+                <div style={mono} className="text-[9px] uppercase tracking-wider text-[#6366f1] font-bold mb-0.5">Need help writing this?</div>
+                <p className="text-xs text-gray-600">Copy a ready-made prompt to paste into ChatGPT, Gemini, Claude, or any AI.</p>
+              </div>
+              <button
+                onClick={handleCopyPrompt}
+                className="text-xs font-mono px-4 py-2 border border-[#6366f1]/30 text-[#6366f1] hover:border-[#6366f1] hover:bg-[#6366f1]/5 transition-colors flex-shrink-0 ml-4"
+              >
+                {copied ? 'Copied!' : 'Copy Prompt'}
+              </button>
+            </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-3 mt-4">
-                  {currentStep > 0 && (
-                    <button
-                      onClick={handleBack}
-                      className="text-xs font-mono px-4 py-2 border border-gray-300 hover:border-black transition-colors"
-                    >
-                      Back
-                    </button>
-                  )}
+            {/* Text input */}
+            <textarea
+              value={userInput}
+              onChange={e => setUserInput(e.target.value)}
+              placeholder="Type or paste your content here..."
+              className="w-full border border-gray-300 rounded px-4 py-3 text-sm leading-relaxed focus:outline-none focus:border-[#27474D] transition-colors resize-none"
+              rows={8}
+            />
 
-                  <div className="flex-1" />
+            {/* Navigation */}
+            <div className="flex items-center gap-3 mt-4">
+              {currentStep > 0 && (
+                <button
+                  onClick={handleBack}
+                  className="text-xs font-mono px-4 py-2 border border-gray-300 hover:border-black transition-colors"
+                >
+                  Back
+                </button>
+              )}
 
-                  <button
-                    onClick={handleSkip}
-                    className="text-xs font-mono px-4 py-2 text-gray-400 hover:text-black transition-colors"
-                  >
-                    Skip
-                  </button>
+              <div className="flex-1" />
 
-                  {isGeminiAvailable() && userInput.trim() ? (
-                    <button
-                      onClick={handlePolish}
-                      disabled={polishing}
-                      className="text-xs font-mono px-5 py-2 bg-[#6366f1] text-white hover:bg-[#4f46e5] transition-colors disabled:opacity-40 flex items-center gap-2"
-                    >
-                      {polishing ? (
-                        <>
-                          <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Polishing...
-                        </>
-                      ) : (
-                        'Next'
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleNext}
-                      disabled={!userInput.trim() && !sectionContent[step.id]}
-                      className="text-xs font-mono px-5 py-2 bg-black text-white hover:bg-[#27474D] transition-colors disabled:opacity-40"
-                    >
-                      Next
-                    </button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Polished preview */}
-                <div className="border border-gray-200 rounded mb-4">
-                  <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-                    <span style={mono} className="text-[10px] uppercase tracking-wider text-[#22c55e] font-bold">
-                      Polished by Gemini
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {isGeminiAvailable() && (
-                        <button
-                          onClick={handleGrammarCheck}
-                          disabled={checking}
-                          className="text-[10px] font-mono text-[#6366f1] hover:underline"
-                        >
-                          {checking ? 'Checking...' : 'Check grammar'}
-                        </button>
-                      )}
-                      <button
-                        onClick={handleEditPolished}
-                        className="text-[10px] font-mono text-gray-500 hover:text-black"
-                      >
-                        Edit input
-                      </button>
-                    </div>
-                  </div>
-                  <div
-                    className="sop-document px-4 py-3"
-                    dangerouslySetInnerHTML={{ __html: polishedHtml }}
-                  />
-                </div>
+              <button
+                onClick={handleSkip}
+                className="text-xs font-mono px-4 py-2 text-gray-400 hover:text-black transition-colors"
+              >
+                Skip
+              </button>
 
-                {/* Grammar suggestions */}
-                {grammarChanges && grammarChanges.length > 0 && grammarChanges[0] !== 'No corrections needed.' && (
-                  <div className="bg-[#6366f1]/5 border border-[#6366f1]/20 rounded px-4 py-3 mb-4">
-                    <div style={mono} className="text-[10px] uppercase tracking-wider text-[#6366f1] font-bold mb-2">
-                      Suggestions
-                    </div>
-                    <ul className="text-xs text-gray-700 space-y-1">
-                      {grammarChanges.map((change, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="text-[#6366f1]">-</span>
-                          <span>{change}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex items-center gap-3">
-                  {currentStep > 0 && (
-                    <button
-                      onClick={handleBack}
-                      className="text-xs font-mono px-4 py-2 border border-gray-300 hover:border-black transition-colors"
-                    >
-                      Back
-                    </button>
-                  )}
-
-                  <div className="flex-1" />
-
-                  {currentStep < totalSteps - 1 ? (
-                    <button
-                      onClick={() => setCurrentStep(prev => prev + 1)}
-                      className="text-xs font-mono px-5 py-2 bg-black text-white hover:bg-[#27474D] transition-colors"
-                    >
-                      Next Section
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="text-xs font-mono px-5 py-2 bg-[#22c55e] text-white hover:bg-[#16a34a] transition-colors disabled:opacity-40"
-                    >
-                      {saving ? 'Saving...' : 'Save & Close'}
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
+              {currentStep < totalSteps - 1 ? (
+                <button
+                  onClick={handleNext}
+                  className="text-xs font-mono px-5 py-2 bg-black text-white hover:bg-[#27474D] transition-colors"
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="text-xs font-mono px-5 py-2 bg-[#22c55e] text-white hover:bg-[#16a34a] transition-colors disabled:opacity-40"
+                >
+                  {saving ? 'Saving...' : 'Save & Close'}
+                </button>
+              )}
+            </div>
           </div>
         ) : null}
       </div>
