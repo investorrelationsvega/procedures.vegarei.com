@@ -278,6 +278,45 @@ export async function getCategoryFolder(companySlug, categoryKey, index, token) 
   return catId
 }
 
+// Get (or create) an Archive subfolder within a category folder:
+//   Standard Operating Procedures / {Business Unit} / {Category Label} / Archive
+export async function getArchiveFolder(companySlug, categoryKey, index, token) {
+  const catFolderId = await getCategoryFolder(companySlug, categoryKey, index, token)
+  if (!catFolderId) return null
+
+  let archiveId = await findFolder('Archive', catFolderId, token)
+  if (!archiveId) archiveId = await createFolder('Archive', catFolderId, token)
+
+  return archiveId
+}
+
+// ── Move a file to a different Drive folder ───────────────────
+// Uses the Drive API to remove from current parent and add to new parent.
+export async function moveFileToFolder(fileId, newParentId, token) {
+  // First get current parents
+  const getRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?fields=parents&${SD}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  if (!getRes.ok) throw new Error(`Drive get parents failed: ${getRes.status}`)
+  const { parents } = await getRes.json()
+  const oldParents = (parents || []).join(',')
+
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?addParents=${newParentId}&removeParents=${oldParents}&${SD}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    }
+  )
+  if (!res.ok) throw new Error(`Drive move failed: ${res.status}`)
+  return res.json()
+}
+
 // ── Add a new SOP to the master index ────────────────────────
 export async function addSopToIndex(index, newSop, token) {
   const updated = {
