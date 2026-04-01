@@ -1,4 +1,5 @@
 const INDEX_FILE_ID = import.meta.env.VITE_DRIVE_INDEX_FILE_ID
+const ROOT_FOLDER_ID = import.meta.env.VITE_DRIVE_ROOT_FOLDER_ID
 
 // All Drive API calls need supportsAllDrives=true to work with Shared Drives
 const SD = 'supportsAllDrives=true'
@@ -247,12 +248,10 @@ export async function getCompanyFolder(companySlug, index, token) {
   const companyConfig = COMPANIES[companySlug]
   if (!companyConfig) return null
 
-  // Find or create root "Standard Operating Procedures" folder
-  let rootId = index?.folderIds?.root || null
+  // Use the configured root folder in the Shared Drive
+  let rootId = ROOT_FOLDER_ID || index?.folderIds?.root || null
   if (!rootId) {
-    // Check for both old and new folder names
     rootId = await findFolder('Standard Operating Procedures', null, token)
-    if (!rootId) rootId = await findFolder('Vega Procedures', null, token)
     if (!rootId) rootId = await createFolder('Standard Operating Procedures', null, token)
   }
 
