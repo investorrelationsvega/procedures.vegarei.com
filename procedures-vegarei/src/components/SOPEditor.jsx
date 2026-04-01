@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { fetchDocContent, saveDocContent } from '../services/docsService'
 import { fetchDriveFile, saveSopHtml, exportGoogleDocAsHtml } from '../lib/drive'
+import { reconstructTemplate } from '../lib/sopTemplate'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -46,13 +47,18 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
       try {
         let html
         try {
-          html = await exportGoogleDocAsHtml(docId, accessToken)
+          html = await fetchDocContent(docId, accessToken)
           isGoogleDoc.current = true
         } catch {
-          html = await fetchDriveFile(docId, accessToken)
-          isGoogleDoc.current = false
+          try {
+            html = await exportGoogleDocAsHtml(docId, accessToken)
+            isGoogleDoc.current = true
+          } catch {
+            html = await fetchDriveFile(docId, accessToken)
+            isGoogleDoc.current = false
+          }
         }
-        setLoadedHtml(html)
+        setLoadedHtml(reconstructTemplate(html))
       } catch (err) {
         setError(err.message)
       } finally {
