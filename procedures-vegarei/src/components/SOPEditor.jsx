@@ -88,7 +88,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
       }
       setDirty(false)
       setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      onClose()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -177,7 +177,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
                 contentEditable
                 suppressContentEditableWarning
                 onInput={handleInput}
-                className="sop-document sop-editing focus:outline-none"
+                className="sop-document focus:outline-none"
                 style={{ minHeight: 600 }}
               />
             )}
