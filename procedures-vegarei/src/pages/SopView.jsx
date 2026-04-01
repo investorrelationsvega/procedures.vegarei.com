@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
   updateSopInIndex, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
-  getArchiveFolder, getCategoryFolder, moveFileToFolder,
+  getFileParent, getArchiveFolderIn, moveFileToFolder,
 } from '../lib/drive'
 import { fetchDocContent } from '../services/docsService'
 import { exportGoogleDocAsHtml } from '../lib/drive'
@@ -166,16 +166,24 @@ export default function SopView() {
       }
       const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
 
-      // Move files to Archive subfolder in Drive
-      if (sopEntry.company && sopEntry.category) {
-        const archiveFolderId = await getArchiveFolder(sopEntry.company, sopEntry.category, index, token)
-        if (archiveFolderId) {
-          if (sopEntry.htmlFileId) await moveFileToFolder(sopEntry.htmlFileId, archiveFolderId, token)
-          if (sopEntry.metaFileId) await moveFileToFolder(sopEntry.metaFileId, archiveFolderId, token)
+      // Move files to Archive subfolder inside their current parent folder
+      let originalParentId = null
+      const fileToMove = sopEntry.htmlFileId || sopEntry.metaFileId
+      if (fileToMove) {
+        originalParentId = await getFileParent(fileToMove, token)
+        if (originalParentId) {
+          const archiveFolderId = await getArchiveFolderIn(originalParentId, token)
+          if (archiveFolderId) {
+            if (sopEntry.htmlFileId) await moveFileToFolder(sopEntry.htmlFileId, archiveFolderId, token)
+            if (sopEntry.metaFileId) await moveFileToFolder(sopEntry.metaFileId, archiveFolderId, token)
+          }
         }
       }
 
-      const updatedIndex = await updateSopInIndex(index, sopEntry.id, { status: 'archived' }, token)
+      const updatedIndex = await updateSopInIndex(index, sopEntry.id, {
+        status: 'archived',
+        ...(originalParentId ? { archivedFromFolder: originalParentId } : {}),
+      }, token)
       setMeta(updatedMeta)
       setIndex(updatedIndex)
       setSopEntry(prev => ({ ...prev, status: 'archived' }))
@@ -200,16 +208,14 @@ export default function SopView() {
       }
       const updatedMeta = await logAuditEvent(sopEntry.metaFileId, meta, event, token)
 
-      // Move files back to the category folder from Archive
-      if (sopEntry.company && sopEntry.category) {
-        const catFolderId = await getCategoryFolder(sopEntry.company, sopEntry.category, index, token)
-        if (catFolderId) {
-          if (sopEntry.htmlFileId) await moveFileToFolder(sopEntry.htmlFileId, catFolderId, token)
-          if (sopEntry.metaFileId) await moveFileToFolder(sopEntry.metaFileId, catFolderId, token)
-        }
+      // Move files back to the original folder from Archive
+      const restoreToFolder = sopEntry.archivedFromFolder
+      if (restoreToFolder) {
+        if (sopEntry.htmlFileId) await moveFileToFolder(sopEntry.htmlFileId, restoreToFolder, token)
+        if (sopEntry.metaFileId) await moveFileToFolder(sopEntry.metaFileId, restoreToFolder, token)
       }
 
-      const updatedIndex = await updateSopInIndex(index, sopEntry.id, { status: 'active' }, token)
+      const updatedIndex = await updateSopInIndex(index, sopEntry.id, { status: 'active', archivedFromFolder: null }, token)
       setMeta(updatedMeta)
       setIndex(updatedIndex)
       setSopEntry(prev => ({ ...prev, status: 'active' }))
