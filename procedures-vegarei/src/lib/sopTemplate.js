@@ -267,6 +267,79 @@ ${htmlContent}
 
 export const DEFAULT_SOP_HTML = generateSopHtml({})
 
+// ── Strip unfilled template sections from published view ────
+// Detects sections that still contain only placeholder/example text
+// and removes them so published SOPs look clean.
+// Only call this for the read-only view, not the editor.
+
+const PLACEHOLDER_SIGNATURES = [
+  'State why this SOP exists',
+  'Define what this SOP covers',
+  'List any terms that someone unfamiliar',
+  'The kinds of terms to include',
+  'Provide a brief summary of the end-to-end process',
+  'What event kicks off this process? Be specific',
+  'Document each step of the process in the order',
+  'Describe the action in one clear sentence',
+  'Identify what could go wrong during this process',
+  'Describe who to contact and what to do when something goes wrong',
+  'List any regulations, internal policies, legal requirements',
+  'Before closing out this process, confirm every item',
+  'This SOP has been reviewed and approved by the following',
+  'No specific regulatory requirements',
+  'Phase Title',
+  'Context or system',
+  'Add any supporting detail: where to find something',
+  'Verify the previous step before proceeding',
+  'Describe what to check and what to do if something does not match',
+]
+
+export function stripUnfilledSections(html) {
+  if (!html) return html
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html')
+  const root = doc.body.firstChild
+  const docBody = root.querySelector('.doc-body')
+  if (!docBody) return html
+
+  // Find all h2 section headings
+  const headings = [...docBody.querySelectorAll('h2')]
+
+  for (const h2 of headings) {
+    // Collect all elements belonging to this section (until next h2)
+    const sectionEls = []
+    let el = h2.nextElementSibling
+    while (el && el.tagName !== 'H2') {
+      sectionEls.push(el)
+      el = el.nextElementSibling
+    }
+
+    // Check if section content is only placeholder text or empty
+    const sectionText = sectionEls.map(e => e.textContent).join(' ')
+    const hasOnlyPlaceholders = sectionEls.length === 0 || PLACEHOLDER_SIGNATURES.some(sig => sectionText.includes(sig))
+
+    // Check if all table body cells are empty
+    const tables = sectionEls.filter(e => e.tagName === 'TABLE')
+    const allTablesEmpty = tables.length > 0 && tables.every(table => {
+      const cells = [...table.querySelectorAll('td')]
+      return cells.every(td => !td.textContent.trim() || td.textContent.trim() === 'Maker' || td.textContent.trim() === 'Checker')
+    })
+
+    // Skip sections that should always show
+    const headingText = h2.textContent.trim().toLowerCase()
+    if (headingText.includes('review schedule') || headingText.includes('revision history')) continue
+
+    // Remove section if unfilled
+    if (hasOnlyPlaceholders && (sectionEls.length === 0 || allTablesEmpty || !tables.length)) {
+      sectionEls.forEach(e => e.remove())
+      h2.remove()
+    }
+  }
+
+  return root.innerHTML
+}
+
 // ── Reconstruct template structure from plain HTML ──────────
 // When SOP content round-trips through Google Docs, all template
 // CSS classes are stripped.  This function detects the document

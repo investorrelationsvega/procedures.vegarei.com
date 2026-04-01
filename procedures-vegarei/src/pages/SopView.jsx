@@ -10,7 +10,7 @@ import {
 import { fetchDocContent } from '../services/docsService'
 import { exportGoogleDocAsHtml } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
-import { reconstructTemplate } from '../lib/sopTemplate'
+import { reconstructTemplate, stripUnfilledSections } from '../lib/sopTemplate'
 import HistoryPanel from '../components/HistoryPanel'
 import SOPEditor from '../components/SOPEditor'
 import AuditLog from '../components/AuditLog'
@@ -536,7 +536,7 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
           {!loading && (
             <div
               className="sop-document"
-              dangerouslySetInnerHTML={{ __html: html }}
+              dangerouslySetInnerHTML={{ __html: sopEntry?.status === 'draft' ? html : stripUnfilledSections(html) }}
             />
           )}
         </div>
