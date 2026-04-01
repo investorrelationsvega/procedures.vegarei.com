@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { fetchDocContent, saveDocContent } from '../services/docsService'
 import { fetchDriveFile, saveSopHtml, exportGoogleDocAsHtml } from '../lib/drive'
 import { reconstructTemplate } from '../lib/sopTemplate'
+import { checkGrammar, isGeminiAvailable } from '../services/geminiService'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -38,6 +39,11 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
   const [dirty, setDirty] = useState(false)
   const [loadedHtml, setLoadedHtml] = useState('')
   const isGoogleDoc = useRef(false)
+
+  // Grammar check state
+  const [checking, setChecking] = useState(false)
+  const [grammarChanges, setGrammarChanges] = useState(null)
+  const [grammarCorrected, setGrammarCorrected] = useState(null)
 
   // Load content from Drive
   useEffect(() => {
@@ -78,6 +84,8 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
   const handleInput = useCallback(() => {
     setDirty(true)
     setSaved(false)
+    setGrammarChanges(null)
+    setGrammarCorrected(null)
   }, [])
 
   const handleSave = useCallback(async () => {
@@ -107,6 +115,35 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
     onClose()
   }, [dirty, onClose])
 
+  const handleGrammarCheck = useCallback(async () => {
+    if (!editorRef.current) return
+    setChecking(true)
+    setError(null)
+    setGrammarChanges(null)
+    setGrammarCorrected(null)
+    try {
+      // Extract just the text content for grammar checking
+      const textContent = editorRef.current.innerText
+      const result = await checkGrammar(textContent)
+      setGrammarChanges(result.changes)
+      setGrammarCorrected(result.corrected)
+    } catch (err) {
+      setError('Grammar check failed: ' + err.message)
+    } finally {
+      setChecking(false)
+    }
+  }, [])
+
+  const handleApplyCorrections = useCallback(() => {
+    if (!editorRef.current || !grammarCorrected) return
+    // Apply corrections by replacing text content while preserving HTML structure
+    // We re-run the grammar-corrected text through the current HTML
+    // For now, show the corrections as a reference panel - user applies manually
+    // This prevents destroying HTML structure
+    setGrammarChanges(null)
+    setGrammarCorrected(null)
+  }, [grammarCorrected])
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       {/* Toolbar */}
@@ -131,12 +168,33 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
 
         <div className="w-px bg-gray-300 mx-1 self-stretch" />
 
-        <ToolbarButton label="Table" onClick={insertTable} title="Insert 3×3 table" />
+        <ToolbarButton label="Table" onClick={insertTable} title="Insert 3x3 table" />
 
         <div className="w-px bg-gray-300 mx-1 self-stretch" />
 
         <ToolbarButton label="Undo" onClick={() => document.execCommand('undo')} title="Undo" />
         <ToolbarButton label="Redo" onClick={() => document.execCommand('redo')} title="Redo" />
+
+        {isGeminiAvailable() && (
+          <>
+            <div className="w-px bg-gray-300 mx-1 self-stretch" />
+            <button
+              onClick={handleGrammarCheck}
+              disabled={checking}
+              title="Check grammar, spelling, and tone"
+              className="px-2.5 py-1.5 text-xs font-mono border border-[#6366f1]/30 text-[#6366f1] hover:border-[#6366f1] hover:bg-[#6366f1]/5 transition-colors flex items-center gap-1.5"
+            >
+              {checking ? (
+                <>
+                  <span className="w-2.5 h-2.5 border-2 border-[#6366f1]/30 border-t-[#6366f1] rounded-full animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                'Check Writing'
+              )}
+            </button>
+          </>
+        )}
 
         <div className="flex-1" />
 
@@ -149,7 +207,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
         {saving && (
           <span className="flex items-center gap-2 mr-2">
             <span className="w-3 h-3 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
-            <span style={mono} className="text-[10px] text-[#797469] uppercase tracking-wider">Saving…</span>
+            <span style={mono} className="text-[10px] text-[#797469] uppercase tracking-wider">Saving...</span>
           </span>
         )}
 
@@ -164,9 +222,43 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
           disabled={saving}
           className="text-xs font-mono px-4 py-2 bg-black text-white hover:bg-[#27474D] transition-colors disabled:opacity-40"
         >
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? 'Saving...' : 'Save'}
         </button>
       </div>
+
+      {/* Grammar check results panel */}
+      {grammarChanges && grammarChanges.length > 0 && (
+        <div className="border-b border-[#6366f1]/20 bg-[#6366f1]/5 px-6 py-3">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <div style={mono} className="text-[10px] uppercase tracking-wider text-[#6366f1] font-bold mb-2">
+                Writing Review
+              </div>
+              {grammarChanges[0] === 'No corrections needed.' ? (
+                <p className="text-xs text-[#22c55e] font-mono">No issues found. Your writing looks good.</p>
+              ) : (
+                <>
+                  <ul className="text-xs text-gray-700 space-y-1">
+                    {grammarChanges.map((change, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="text-[#6366f1] flex-shrink-0">-</span>
+                        <span>{change}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-[10px] text-gray-500 mt-2 font-mono">Review the suggestions above and make corrections in the editor.</p>
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => { setGrammarChanges(null); setGrammarCorrected(null) }}
+              className="text-xs font-mono text-gray-400 hover:text-black px-2 py-1"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Editor area */}
       <div className="flex-1 overflow-auto">
@@ -175,7 +267,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
             {loading ? (
               <div className="flex items-center gap-3 py-20">
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
-                <span style={mono} className="text-xs text-[#797469] uppercase tracking-wider">Loading…</span>
+                <span style={mono} className="text-xs text-[#797469] uppercase tracking-wider">Loading...</span>
               </div>
             ) : (
               <div
