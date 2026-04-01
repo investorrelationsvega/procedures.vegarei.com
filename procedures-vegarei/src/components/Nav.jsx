@@ -1,12 +1,16 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import HelpPanel from './HelpPanel'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
 export default function Nav() {
   const { user, login, logout, isAuthed } = useAuth()
+  const [showHelp, setShowHelp] = useState(false)
 
   return (
+    <>
     <nav style={{ background: '#ffffff', borderBottom: '1px solid #000000' }} className="sticky top-0 z-50">
       <div className="max-w-screen-xl mx-auto px-8 h-12 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 no-underline">
@@ -22,6 +26,15 @@ export default function Nav() {
         </Link>
 
         <div className="flex items-center gap-5">
+          <button
+            onClick={() => setShowHelp(true)}
+            style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#a0a0a0', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', transition: 'all 0.15s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#000000' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#a0a0a0' }}
+          >
+            How This Works
+          </button>
+
           {isAuthed ? (
             <>
               <span className="flex items-center gap-1.5">
@@ -51,5 +64,8 @@ export default function Nav() {
         </div>
       </div>
     </nav>
+
+    {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
+    </>
   )
 }
