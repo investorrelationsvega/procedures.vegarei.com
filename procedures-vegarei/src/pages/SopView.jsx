@@ -5,6 +5,7 @@ import {
   loadSopHtml, loadSopMeta, loadIndex,
   updateSopInIndex, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
   getFileParent, getArchiveFolderIn, moveFileToFolder,
+  deleteFile, removeSopFromIndex, getCategoryFolder,
 } from '../lib/drive'
 import { fetchDocContent } from '../services/docsService'
 import { exportGoogleDocAsHtml } from '../lib/drive'
@@ -227,6 +228,49 @@ export default function SopView() {
     }
   }, [sopEntry, token, index, meta, user])
 
+  const handleDiscard = useCallback(async () => {
+    if (!sopEntry || !token || !index) return
+    if (!confirm('Permanently discard this SOP? This will delete all files from Google Drive. This action cannot be undone.')) return
+    setSaving(true)
+    try {
+      if (sopEntry.htmlFileId) await deleteFile(sopEntry.htmlFileId, token)
+      if (sopEntry.metaFileId) await deleteFile(sopEntry.metaFileId, token)
+      const updatedIndex = await removeSopFromIndex(index, sopEntry.id, token)
+      setIndex(updatedIndex)
+      navigate(`/${sopEntry.company}`)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to discard. Check Drive permissions.')
+    } finally {
+      setSaving(false)
+    }
+  }, [sopEntry, token, index])
+
+  const [showReclassify, setShowReclassify] = useState(false)
+
+  const handleReclassify = useCallback(async (newCategory) => {
+    if (!sopEntry || !token || !index) return
+    setSaving(true)
+    try {
+      // Move files to new category folder
+      const newFolderId = await getCategoryFolder(sopEntry.company, newCategory, index, token)
+      if (newFolderId) {
+        if (sopEntry.htmlFileId) await moveFileToFolder(sopEntry.htmlFileId, newFolderId, token)
+        if (sopEntry.metaFileId) await moveFileToFolder(sopEntry.metaFileId, newFolderId, token)
+      }
+
+      const updatedIndex = await updateSopInIndex(index, sopEntry.id, { category: newCategory }, token)
+      setIndex(updatedIndex)
+      setSopEntry(prev => ({ ...prev, category: newCategory }))
+      setShowReclassify(false)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to reclassify. Check Drive permissions.')
+    } finally {
+      setSaving(false)
+    }
+  }, [sopEntry, token, index])
+
   const handlePrint = useCallback(async () => {
     if (sopEntry?.metaFileId && token) {
       const event = {
@@ -349,12 +393,51 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
             )}
 
             {isAuthed && sopEntry && sopEntry.status !== 'archived' && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowReclassify(!showReclassify)}
+                  disabled={saving}
+                  className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors text-[#797469]"
+                >
+                  Reclassify
+                </button>
+                {showReclassify && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-30 py-1 w-56 max-h-64 overflow-y-auto">
+                    {Object.entries(CATEGORIES).map(([key, cat]) => (
+                      <button
+                        key={key}
+                        onClick={() => handleReclassify(key)}
+                        disabled={key === sopEntry.category}
+                        className={`w-full text-left px-3 py-1.5 text-xs font-mono hover:bg-gray-50 transition-colors flex items-center gap-2 ${
+                          key === sopEntry.category ? 'text-gray-300' : 'text-gray-700'
+                        }`}
+                      >
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cat.color }} />
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isAuthed && sopEntry && sopEntry.status !== 'archived' && (
               <button
                 onClick={handleArchive}
                 disabled={saving}
                 className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors text-[#797469]"
               >
                 Archive
+              </button>
+            )}
+
+            {isAuthed && sopEntry?.status === 'draft' && (
+              <button
+                onClick={handleDiscard}
+                disabled={saving}
+                className="text-xs font-mono border border-red-300 px-3 py-1.5 hover:border-red-500 hover:bg-red-50 transition-colors text-red-500"
+              >
+                Discard
               </button>
             )}
 

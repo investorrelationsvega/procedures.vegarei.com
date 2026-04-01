@@ -95,6 +95,29 @@ export async function updateSopInIndex(index, sopId, fields, token) {
   return updated
 }
 
+// ── Delete a file from Drive (permanent) ──────────────────
+export async function deleteFile(fileId, token) {
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?${SD}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  )
+  if (!res.ok && res.status !== 404) throw new Error(`Drive delete failed: ${res.status}`)
+}
+
+// ── Remove an SOP from the index entirely ─────────────────
+export async function removeSopFromIndex(index, sopId, token) {
+  const updated = {
+    ...index,
+    lastUpdated: new Date().toISOString().split('T')[0],
+    sops: index.sops.filter(s => s.id !== sopId),
+  }
+  await saveIndex(updated, token)
+  return updated
+}
+
 // ── Save the full index back to Drive ──────────────────────
 async function saveIndex(index, token) {
   await fetch(

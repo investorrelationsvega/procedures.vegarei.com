@@ -33,13 +33,37 @@ export function generateSopHtml({ sopId, title, scope, category, owner, author, 
 
 <div class="doc-body">
 
-<h2>1. Overview</h2>
-<p>Describe the purpose of this SOP and its scope within Vega operations.</p>
+<h2>1. Purpose and Scope</h2>
+<div class="sub-label">1.1 Purpose</div>
+<p>State why this SOP exists in one to two sentences. What business need does it address? Example: "This SOP ensures consistent and accurate processing of monthly investor distributions for all Vega Assisted Living Fund II, L.P. limited partners."</p>
 
-<div class="sub-label">1.1 Trigger</div>
-<p>This process is triggered when...</p>
+<div class="sub-label">1.2 Scope</div>
+<p>Define what this SOP covers and, just as importantly, what it does not cover. Be specific about boundaries so there is no confusion about where this process starts and ends. Example: "Covers all Class A and Class B limited partner distributions processed through Juniper Square. Does not cover GP distributions, special allocations, or one-time redemption payments."</p>
 
-<div class="sub-label">1.2 Key Systems</div>
+<h2>2. Definitions</h2>
+<p>List any terms that someone unfamiliar with this process would need to understand before reading further. Think about a new employee on their first day, or someone from a completely different department. The kinds of terms to include:</p>
+<ul>
+  <li><strong>Acronyms</strong> your team uses regularly (e.g. NAV, ACH, AUM, LP, GP, K-1)</li>
+  <li><strong>Software and system names</strong> (e.g. Syndication Pro, Juniper Square, QuickBooks, AppFolio)</li>
+  <li><strong>Role titles</strong> that may not be obvious (e.g. Fund Controller, IR Associate, Property Manager)</li>
+  <li><strong>Industry or financial terms</strong> (e.g. capital call, waterfall, preferred return, carried interest)</li>
+  <li><strong>Internal shorthand</strong> your team uses day to day that an outsider would not know</li>
+</ul>
+<table>
+  <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+  <tbody>
+    <tr><td></td><td></td></tr>
+    <tr><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>3. Overview</h2>
+<p>Provide a brief summary of the end-to-end process in plain language. Someone should be able to read this section and understand the full picture before diving into the detailed steps below.</p>
+
+<div class="sub-label">3.1 Trigger</div>
+<p>What event kicks off this process? Be specific. Examples: "The first business day of each month," "When a new subscription agreement is received," "When an investor submits a redemption request."</p>
+
+<div class="sub-label">3.2 Key Systems</div>
 <table>
   <thead><tr><th>System</th><th>Used For</th><th>Access</th></tr></thead>
   <tbody>
@@ -47,7 +71,8 @@ export function generateSopHtml({ sopId, title, scope, category, owner, author, 
   </tbody>
 </table>
 
-<h2>2. Procedure</h2>
+<h2>4. Procedure</h2>
+<p>Document each step of the process in the order it happens. Be specific enough that someone could follow these steps without asking for help. Use the Maker role for the person executing the step and the Checker role for the person verifying it.</p>
 
 <div class="phase">
   <span class="phase-num">PHASE 1</span>
@@ -61,24 +86,73 @@ export function generateSopHtml({ sopId, title, scope, category, owner, author, 
     <tr>
       <td><span class="step-num">01</span></td>
       <td>
-        <span class="step-action">Action description</span>
-        <span class="step-detail">Supporting detail, format requirements, or what happens next.</span>
+        <span class="step-action">Describe the action in one clear sentence.</span>
+        <span class="step-detail">Add any supporting detail: where to find something, what to watch for, format requirements, or what happens next. If no detail is needed, remove this line.</span>
       </td>
       <td><span class="maker">Maker</span></td>
     </tr>
     <tr>
       <td><span class="step-num">02</span></td>
       <td>
-        <span class="step-action">Verify before proceeding</span>
-        <span class="step-detail">Check criteria. If discrepancy found, take corrective action.</span>
+        <span class="step-action">Verify the previous step before proceeding.</span>
+        <span class="step-detail">Describe what to check and what to do if something does not match.</span>
       </td>
       <td><span class="checker">Checker</span></td>
     </tr>
   </tbody>
 </table>
 
-<h2>3. Completion Checklist</h2>
-<p>Before closing out this process, confirm all of the following are complete.</p>
+<h2>5. Risks and Controls</h2>
+<p>Identify what could go wrong during this process and what safeguards are in place to prevent or catch errors. Think about the worst-case scenarios: wrong numbers, missed deadlines, unauthorized access, data sent to the wrong person. For each risk, describe the specific control that addresses it.</p>
+
+<table>
+  <thead><tr><th>Risk</th><th>What Could Go Wrong</th><th>Control</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Example</td>
+      <td>Incorrect distribution amount sent to an investor</td>
+      <td>Checker independently verifies all amounts against the NAV report before any payment is released</td>
+    </tr>
+    <tr><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>6. Escalation Path</h2>
+<p>Describe who to contact and what to do when something goes wrong or falls outside normal procedures. Include names, roles, and timeframes so there is no ambiguity about next steps when a problem occurs.</p>
+
+<table>
+  <thead><tr><th>Situation</th><th>Escalate To</th><th>Timeframe</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Example: Distribution discrepancy exceeds $500</td>
+      <td>Fund Controller</td>
+      <td>Within one business day</td>
+    </tr>
+    <tr>
+      <td>Example: Issue unresolved after 48 hours</td>
+      <td>Managing Partner</td>
+      <td>Immediately</td>
+    </tr>
+    <tr><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>7. Compliance References</h2>
+<p>List any regulations, internal policies, legal requirements, or governing documents that this SOP relates to. If this process exists because of a specific rule or agreement, reference it here. If none apply, write "No specific regulatory requirements. This SOP follows internal best practices."</p>
+
+<table>
+  <thead><tr><th>Reference</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Example: Fund LPA Section 8.3</td>
+      <td>Distribution provisions and payment timing requirements</td>
+    </tr>
+    <tr><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>8. Completion Checklist</h2>
+<p>Before closing out this process, confirm every item below is complete. Do not skip any line.</p>
 
 <table>
   <thead><tr><th>Item</th><th style="width:100px;">Verified By</th></tr></thead>
@@ -88,7 +162,7 @@ export function generateSopHtml({ sopId, title, scope, category, owner, author, 
   </tbody>
 </table>
 
-<h2>4. Key Contacts</h2>
+<h2>9. Key Contacts</h2>
 <table>
   <thead><tr><th>Party</th><th>Contact</th><th>Role in this Process</th></tr></thead>
   <tbody>
@@ -102,10 +176,22 @@ export function generateSopHtml({ sopId, title, scope, category, owner, author, 
   <div class="xref-item">None yet</div>
 </div>
 
-<h2>5. Review Schedule</h2>
-<p>This SOP is reviewed quarterly at the end of each calendar quarter (March 31, June 30, September 30, December 31) and immediately upon any material change. At each review, confirm all steps, contacts, system references, and procedures remain current and update the revision history accordingly.</p>
+<h2>10. Approval</h2>
+<p>This SOP has been reviewed and approved by the following individuals. All parties below confirm the process documented above is accurate, complete, and ready for use.</p>
 
-<h2>6. Revision History</h2>
+<table>
+  <thead><tr><th>Role</th><th>Name</th><th>Date</th></tr></thead>
+  <tbody>
+    <tr><td>Prepared By (Maker)</td><td>${author || 'TBD'}</td><td>${today}</td></tr>
+    <tr><td>Reviewed By (Checker)</td><td>${checker || 'TBD'}</td><td></td></tr>
+    <tr><td>Approved By</td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>11. Review Schedule</h2>
+<p>This SOP is reviewed at the end of each calendar quarter (March 31, June 30, September 30, December 31) and immediately upon any material change to the process, systems, or personnel involved. At each review, confirm all steps, contacts, system references, and procedures remain current and update the revision history below.</p>
+
+<h2>12. Revision History</h2>
 <table class="rev-table">
   <thead><tr>
     <th style="width:65px;">Version</th>

@@ -374,19 +374,43 @@ tr:nth-child(even) td { background: #fafafa; }
      ═══════════════════════════════════════════════════════════ -->
 <div class="doc-body">
 
-  <!-- ── SECTION: Overview ─────────────────────────────────── -->
-  <!--
-    Every SOP starts with an Overview section.
-    State: what the SOP covers, who performs it, and what triggers it.
-    Keep to 1-3 short paragraphs. No bullet lists in Overview.
-  -->
-  <h2>1. Overview</h2>
-  <p>{{OVERVIEW_PARAGRAPH}} One to two sentences describing the purpose of this SOP and its scope within Vega operations.</p>
+  <!-- ── SECTION 1: Purpose and Scope ────────────────────────── -->
+  <h2>1. Purpose and Scope</h2>
 
-  <div class="sub-label">1.1 Trigger</div>
-  <p>This process is triggered when {{TRIGGER_CONDITION}}.</p>
+  <div class="sub-label">1.1 Purpose</div>
+  <p>State why this SOP exists in one to two sentences. What business need does it address? Example: "This SOP ensures consistent and accurate processing of monthly investor distributions for all Vega Assisted Living Fund II, L.P. limited partners."</p>
 
-  <div class="sub-label">1.2 Key Systems</div>
+  <div class="sub-label">1.2 Scope</div>
+  <p>Define what this SOP covers and, just as importantly, what it does not cover. Be specific about boundaries so there is no confusion about where this process starts and ends. Example: "Covers all Class A and Class B limited partner distributions processed through Juniper Square. Does not cover GP distributions, special allocations, or one-time redemption payments."</p>
+
+
+  <!-- ── SECTION 2: Definitions ───────────────────────────── -->
+  <h2>2. Definitions</h2>
+  <p>List any terms that someone unfamiliar with this process would need to understand before reading further. Think about a new employee on their first day, or someone from a completely different department. The kinds of terms to include:</p>
+  <ul>
+    <li><strong>Acronyms</strong> your team uses regularly (e.g. NAV, ACH, AUM, LP, GP, K-1)</li>
+    <li><strong>Software and system names</strong> (e.g. Syndication Pro, Juniper Square, QuickBooks, AppFolio)</li>
+    <li><strong>Role titles</strong> that may not be obvious (e.g. Fund Controller, IR Associate, Property Manager)</li>
+    <li><strong>Industry or financial terms</strong> (e.g. capital call, waterfall, preferred return, carried interest)</li>
+    <li><strong>Internal shorthand</strong> your team uses day to day that an outsider would not know</li>
+  </ul>
+  <table>
+    <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+    <tbody>
+      <tr><td></td><td></td></tr>
+      <tr><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ── SECTION 3: Overview ──────────────────────────────── -->
+  <h2>3. Overview</h2>
+  <p>Provide a brief summary of the end-to-end process in plain language. Someone should be able to read this section and understand the full picture before diving into the detailed steps below.</p>
+
+  <div class="sub-label">3.1 Trigger</div>
+  <p>What event kicks off this process? Be specific. Examples: "The first business day of each month," "When a new subscription agreement is received," "When an investor submits a redemption request."</p>
+
+  <div class="sub-label">3.2 Key Systems</div>
   <table>
     <thead><tr><th>System</th><th>Used For</th><th>Access</th></tr></thead>
     <tbody>
@@ -396,7 +420,7 @@ tr:nth-child(even) td { background: #fafafa; }
   </table>
 
 
-  <!-- ── SECTION: Step-by-step process ─────────────────────── -->
+  <!-- ── SECTION 4: Procedure ─────────────────────────────── -->
   <!--
     Use Phase headers to group logical blocks of steps.
     Each phase = one distinct part of the workflow.
@@ -409,13 +433,8 @@ tr:nth-child(even) td { background: #fafafa; }
     - Use Maker for all execution steps
     - Use Checker for verification, review, and sign-off steps
   -->
-  <h2>2. {{SECTION_TITLE}}</h2>
-  <p>Optional introductory paragraph for this section. Explain what system to be in, any prerequisites, or context before steps begin.</p>
-
-  <div class="notice notice-alert">
-    <!-- Use notice-alert for hard stops, critical warnings, or irreversible actions. -->
-    <strong>Note:</strong> {{CRITICAL_WARNING_IF_ANY}}
-  </div>
+  <h2>4. Procedure</h2>
+  <p>Document each step of the process in the order it happens. Be specific enough that someone could follow these steps without asking for help. Use the Maker role for the person executing the step and the Checker role for the person verifying it.</p>
 
   <div class="phase">
     <span class="phase-num">PHASE 1</span>
@@ -435,142 +454,93 @@ tr:nth-child(even) td { background: #fafafa; }
       <tr>
         <td><span class="step-num">01</span></td>
         <td>
-          <span class="step-action">{{STEP_ACTION}} — write the action in one clear imperative sentence.</span>
-          <span class="step-detail">{{STEP_DETAIL}} — optional supporting detail: where to find something, what to watch for, format requirements, or what happens next. If no detail is needed, omit this span entirely.</span>
+          <span class="step-action">Describe the action in one clear sentence.</span>
+          <span class="step-detail">Add any supporting detail: where to find something, what to watch for, format requirements, or what happens next. If no detail is needed, remove this line.</span>
         </td>
         <td><span class="maker">Maker</span></td>
       </tr>
       <tr>
         <td><span class="step-num">02</span></td>
         <td>
-          <span class="step-action">{{STEP_ACTION}}</span>
-          <span class="step-detail">{{STEP_DETAIL}}</span>
-        </td>
-        <td><span class="maker">Maker</span></td>
-      </tr>
-      <tr>
-        <td><span class="step-num">03</span></td>
-        <td>
-          <span class="step-action">Verify {{WHAT_TO_VERIFY}} before proceeding</span>
-          <span class="step-detail">Check: {{VERIFICATION_CRITERIA}}. If discrepancy found, {{REMEDIATION_ACTION}}.</span>
+          <span class="step-action">Verify the previous step before proceeding.</span>
+          <span class="step-detail">Describe what to check and what to do if something does not match.</span>
         </td>
         <td><span class="checker">Checker</span></td>
       </tr>
     </tbody>
   </table>
 
-  <div class="phase">
-    <span class="phase-num">PHASE 2</span>
-    <span class="phase-title">{{PHASE_2_NAME}}</span>
-    <span class="phase-note">{{PHASE_2_CONTEXT}}</span>
-  </div>
+
+  <!-- ── SECTION 5: Risks and Controls ────────────────────── -->
+  <h2>5. Risks and Controls</h2>
+  <p>Identify what could go wrong during this process and what safeguards are in place to prevent or catch errors. Think about the worst-case scenarios: wrong numbers, missed deadlines, unauthorized access, data sent to the wrong person. For each risk, describe the specific control that addresses it.</p>
 
   <table>
-    <thead>
-      <tr>
-        <th style="width:55px;">Step</th>
-        <th>Action</th>
-        <th style="width:80px;">Role</th>
-      </tr>
-    </thead>
+    <thead><tr><th>Risk</th><th>What Could Go Wrong</th><th>Control</th></tr></thead>
     <tbody>
       <tr>
-        <td><span class="step-num">01</span></td>
-        <td>
-          <span class="step-action">{{STEP_ACTION}}</span>
-          <span class="step-detail">{{STEP_DETAIL}}</span>
-        </td>
-        <td><span class="maker">Maker</span></td>
+        <td>Example</td>
+        <td>Incorrect distribution amount sent to an investor</td>
+        <td>Checker independently verifies all amounts against the NAV report before any payment is released</td>
       </tr>
-      <tr>
-        <td><span class="step-num">02</span></td>
-        <td>
-          <span class="step-action">{{STEP_ACTION}}</span>
-        </td>
-        <td><span class="maker">Maker</span></td>
-      </tr>
+      <tr><td></td><td></td><td></td></tr>
     </tbody>
   </table>
 
 
-  <!-- ── SECTION: Reference table ──────────────────────────── -->
-  <!--
-    Use reference tables for: fee schedules, field mappings,
-    contact directories, configuration values, data dictionaries.
-    Keep table headers short. Use .mono class for codes/IDs/values.
-  -->
-  <h2>3. {{REFERENCE_SECTION_TITLE}}</h2>
-  <p>Optional intro sentence.</p>
+  <!-- ── SECTION 6: Escalation Path ───────────────────────── -->
+  <h2>6. Escalation Path</h2>
+  <p>Describe who to contact and what to do when something goes wrong or falls outside normal procedures. Include names, roles, and timeframes so there is no ambiguity about next steps when a problem occurs.</p>
 
   <table>
-    <thead><tr><th>{{COL_1}}</th><th>{{COL_2}}</th><th>{{COL_3}}</th></tr></thead>
+    <thead><tr><th>Situation</th><th>Escalate To</th><th>Timeframe</th></tr></thead>
     <tbody>
       <tr>
-        <td>{{VALUE}}</td>
-        <td><span class="mono">{{CODE_OR_ID}}</span></td>
-        <td>{{DESCRIPTION}}</td>
+        <td>Example: Distribution discrepancy exceeds $500</td>
+        <td>Fund Controller</td>
+        <td>Within one business day</td>
       </tr>
       <tr>
-        <td>{{VALUE}}</td>
-        <td><span class="mono">{{CODE_OR_ID}}</span></td>
-        <td>{{DESCRIPTION}}</td>
+        <td>Example: Issue unresolved after 48 hours</td>
+        <td>Managing Partner</td>
+        <td>Immediately</td>
       </tr>
+      <tr><td></td><td></td><td></td></tr>
     </tbody>
   </table>
 
-  <div class="notice notice-info">
-    <!-- Use notice-info for contextual tips, reminders, or helpful background. -->
-    {{INFO_NOTE}}
-  </div>
+
+  <!-- ── SECTION 7: Compliance References ─────────────────── -->
+  <h2>7. Compliance References</h2>
+  <p>List any regulations, internal policies, legal requirements, or governing documents that this SOP relates to. If this process exists because of a specific rule or agreement, reference it here. If none apply, write "No specific regulatory requirements. This SOP follows internal best practices."</p>
+
+  <table>
+    <thead><tr><th>Reference</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Example: Fund LPA Section 8.3</td>
+        <td>Distribution provisions and payment timing requirements</td>
+      </tr>
+      <tr><td></td><td></td></tr>
+    </tbody>
+  </table>
 
 
-  <!-- ── SECTION: Notices reference ───────────────────────── -->
-  <!--
-    Notice box types — use sparingly, one per relevant section max:
-
-    notice-warn  = important procedural note (amber)
-                   Example: "This step uses a CSV import. The sample file must
-                   be downloaded fresh each month."
-
-    notice-alert = hard stop, irreversible action, or critical error risk (red)
-                   Example: "Wire cut-off is 4:00 PM MST. Wires submitted after
-                   this time process on the next business day."
-
-    notice-info  = helpful context or cross-system note (teal)
-                   Example: "Syndication Pro is the investor-facing portal. Changes
-                   made here are visible to limited partners."
-  -->
-
-  <div class="notice notice-warn">
-    <strong>Important:</strong> {{WARN_NOTE}}
-  </div>
-
-
-  <!-- ── SECTION: Completion checklist ─────────────────────── -->
-  <!--
-    Include a checklist section for any SOP with 3+ phases or
-    multiple parallel workstreams. Keep items short and binary.
-  -->
-  <h2>{{N}}. Completion Checklist</h2>
-  <p>Before closing out this process, confirm all of the following are complete.</p>
+  <!-- ── SECTION 8: Completion Checklist ──────────────────── -->
+  <h2>8. Completion Checklist</h2>
+  <p>Before closing out this process, confirm every item below is complete. Do not skip any line.</p>
 
   <table>
     <thead><tr><th>Item</th><th style="width:100px;">Verified By</th></tr></thead>
     <tbody>
       <tr><td>{{CHECKLIST_ITEM_1}}</td><td>Maker</td></tr>
       <tr><td>{{CHECKLIST_ITEM_2}}</td><td>Checker</td></tr>
-      <tr><td>{{CHECKLIST_ITEM_3}}</td><td>Maker</td></tr>
-      <tr><td>{{CHECKLIST_ITEM_4}}</td><td>Checker</td></tr>
     </tbody>
   </table>
 
 
-  <!-- ── SECTION: Key contacts ─────────────────────────────── -->
-  <!--
-    Always include a contacts section. Use full name and email.
-    Roles: Maker, Checker, and any external contacts relevant to the SOP.
-  -->
-  <h2>{{N}}. Key Contacts</h2>
+  <!-- ── SECTION 9: Key Contacts ──────────────────────────── -->
+  <h2>9. Key Contacts</h2>
   <table>
     <thead><tr><th>Party</th><th>Contact</th><th>Role in this Process</th></tr></thead>
     <tbody>
@@ -580,35 +550,33 @@ tr:nth-child(even) td { background: #fafafa; }
     </tbody>
   </table>
 
-
-  <!-- ── SECTION: Cross-references ─────────────────────────── -->
-  <!--
-    Use the xref block when this SOP depends on or feeds into another SOP.
-    List each related SOP on its own xref-item line.
-  -->
   <div class="xref">
     <div class="xref-label">Related SOPs</div>
-    <div class="xref-item">{{RELATED_SOP_ID}} — {{RELATED_SOP_TITLE}}</div>
+    <div class="xref-item">{{RELATED_SOP_ID}} - {{RELATED_SOP_TITLE}}</div>
   </div>
 
 
-  <!-- ── SECTION: Review schedule ──────────────────────────── -->
-  <!--
-    This section is fixed language. Only the final sentence changes
-    if the SOP has specific triggers beyond quarterly review.
-    Do not change the quarterly dates or the calendar reminder reference.
-  -->
-  <h2>{{N}}. Review Schedule</h2>
-  <p>This SOP is reviewed quarterly at the end of each calendar quarter (March 31, June 30, September 30, December 31) and immediately upon any material change to {{MATERIAL_CHANGE_TRIGGERS}}. Recurring calendar reminders are set on j@vegarei.com for each quarterly review date. At each review, confirm all steps, contacts, system references, and procedures remain current and update the revision history accordingly.</p>
+  <!-- ── SECTION 10: Approval ─────────────────────────────── -->
+  <h2>10. Approval</h2>
+  <p>This SOP has been reviewed and approved by the following individuals. All parties below confirm the process documented above is accurate, complete, and ready for use.</p>
+
+  <table>
+    <thead><tr><th>Role</th><th>Name</th><th>Date</th></tr></thead>
+    <tbody>
+      <tr><td>Prepared By (Maker)</td><td>{{MAKER_NAME}}</td><td>{{EFFECTIVE_DATE}}</td></tr>
+      <tr><td>Reviewed By (Checker)</td><td>{{CHECKER_NAME}}</td><td></td></tr>
+      <tr><td>Approved By</td><td></td><td></td></tr>
+    </tbody>
+  </table>
 
 
-  <!-- ── SECTION: Revision history ─────────────────────────── -->
-  <!--
-    Always the last section. Every save/edit adds a row.
-    Version numbering: 1.0 (initial) / 1.1, 1.2 (minor) / 2.0 (major rewrite)
-    Summary: one sentence describing what changed, not why.
-  -->
-  <h2>{{N}}. Revision History</h2>
+  <!-- ── SECTION 11: Review Schedule ──────────────────────── -->
+  <h2>11. Review Schedule</h2>
+  <p>This SOP is reviewed at the end of each calendar quarter (March 31, June 30, September 30, December 31) and immediately upon any material change to the process, systems, or personnel involved. At each review, confirm all steps, contacts, system references, and procedures remain current and update the revision history below.</p>
+
+
+  <!-- ── SECTION 12: Revision History ─────────────────────── -->
+  <h2>12. Revision History</h2>
   <table class="rev-table">
     <thead>
       <tr>
@@ -623,7 +591,7 @@ tr:nth-child(even) td { background: #fafafa; }
         <td>1.0</td>
         <td>{{EFFECTIVE_DATE}}</td>
         <td>{{MAKER_NAME}}</td>
-        <td>Initial publication. {{ONE_SENTENCE_SUMMARY_OF_WHAT_SOP_COVERS}}</td>
+        <td>Initial publication.</td>
       </tr>
     </tbody>
   </table>
