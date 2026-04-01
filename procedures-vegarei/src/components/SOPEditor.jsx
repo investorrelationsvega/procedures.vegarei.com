@@ -381,22 +381,38 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
           {title || 'Edit SOP'}
         </span>
 
+        <ToolbarButton label="B" onClick={() => document.execCommand('bold')} title="Bold" style={{ fontWeight: 700 }} />
+        <ToolbarButton label="I" onClick={() => document.execCommand('italic')} title="Italic" style={{ fontStyle: 'italic' }} />
+
+        <div className="w-px bg-gray-300 mx-1 self-stretch" />
+
+        <ToolbarButton label="List" onClick={() => document.execCommand('insertUnorderedList')} title="Bullet list" />
+        <ToolbarButton label="Table" onClick={insertTable} title="Insert table" />
+
+        <div className="w-px bg-gray-300 mx-1 self-stretch" />
+
+        <ToolbarButton label="Undo" onClick={() => document.execCommand('undo')} title="Undo" />
+        <ToolbarButton label="Redo" onClick={() => document.execCommand('redo')} title="Redo" />
+
         {isGeminiAvailable() && (
-          <button
-            onClick={handleGrammarCheck}
-            disabled={checking}
-            title="Check grammar, spelling, and tone across all sections"
-            className="px-2.5 py-1.5 text-xs font-mono border border-[#6366f1]/30 text-[#6366f1] hover:border-[#6366f1] hover:bg-[#6366f1]/5 transition-colors flex items-center gap-1.5"
-          >
-            {checking ? (
-              <>
-                <span className="w-2.5 h-2.5 border-2 border-[#6366f1]/30 border-t-[#6366f1] rounded-full animate-spin" />
-                Checking...
-              </>
-            ) : (
-              'Check Writing'
-            )}
-          </button>
+          <>
+            <div className="w-px bg-gray-300 mx-1 self-stretch" />
+            <button
+              onClick={handleGrammarCheck}
+              disabled={checking}
+              title="Check grammar, spelling, and tone across all sections"
+              className="px-2.5 py-1.5 text-xs font-mono border border-[#6366f1]/30 text-[#6366f1] hover:border-[#6366f1] hover:bg-[#6366f1]/5 transition-colors flex items-center gap-1.5"
+            >
+              {checking ? (
+                <>
+                  <span className="w-2.5 h-2.5 border-2 border-[#6366f1]/30 border-t-[#6366f1] rounded-full animate-spin" />
+                  Polishing...
+                </>
+              ) : (
+                'Polish with Gemini'
+              )}
+            </button>
+          </>
         )}
 
         <div className="flex-1" />
