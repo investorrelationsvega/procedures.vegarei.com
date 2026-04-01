@@ -35,26 +35,24 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
   const [dirty, setDirty] = useState(false)
+  const [loadedHtml, setLoadedHtml] = useState('')
   const isGoogleDoc = useRef(false)
 
+  // Load content from Drive
   useEffect(() => {
     async function load() {
       setLoading(true)
       setError(null)
       try {
-        // Try loading as Google Doc (export as HTML), fall back to raw file
         let html
         try {
           html = await exportGoogleDocAsHtml(docId, accessToken)
           isGoogleDoc.current = true
         } catch {
-          // Fall back to raw HTML file
           html = await fetchDriveFile(docId, accessToken)
           isGoogleDoc.current = false
         }
-        if (editorRef.current) {
-          editorRef.current.innerHTML = html
-        }
+        setLoadedHtml(html)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -63,6 +61,13 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
     }
     load()
   }, [docId, accessToken])
+
+  // Set content on the editor div once it renders
+  useEffect(() => {
+    if (!loading && editorRef.current && loadedHtml) {
+      editorRef.current.innerHTML = loadedHtml
+    }
+  }, [loading, loadedHtml])
 
   const handleInput = useCallback(() => {
     setDirty(true)
