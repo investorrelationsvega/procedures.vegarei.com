@@ -188,6 +188,53 @@ Generate the section content now:`
   return html
 }
 
+// ── Rewrite user input for a specific SOP section ────────────
+// Takes rough notes from the user and rewrites them in proper
+// SOP format, tone, and structure for the given section.
+
+export async function rewriteForSection(sectionId, userInput, sopTitle) {
+  const sectionContext = {
+    'purpose-and-scope': 'Purpose and Scope section. Write a clear Purpose statement (1-2 sentences on why this SOP exists) and a Scope statement (what is covered and what is not). Use <div class="sub-label">1.1 Purpose</div> and <div class="sub-label">1.2 Scope</div> as sub-headings.',
+    'definitions': 'Definitions section. Format as an HTML table with <th>Term</th><th>Definition</th> headers. Each term gets one row. Keep definitions to one clear sentence each.',
+    'overview': 'Overview section. Write a brief summary paragraph, then a Trigger sub-section (<div class="sub-label">3.1 Trigger</div>) explaining what kicks off the process, then a Key Systems sub-section (<div class="sub-label">3.2 Key Systems</div>) as a table with System, Used For, and Access columns.',
+    'procedure': 'Procedure section. Format steps in a table with Step, Action, and Role columns. Use <span class="step-num">01</span> for step numbers, <span class="step-action">...</span> for the action, <span class="step-detail">...</span> for details, and <span class="maker">Maker</span> or <span class="checker">Checker</span> for roles. Group steps under phase headers using <div class="phase"><span class="phase-num">PHASE 1</span><span class="phase-title">Title</span></div> if there are distinct stages.',
+    'risks-and-controls': 'Risks and Controls section. Format as a table with Risk, What Could Go Wrong, and Control columns. Be specific about both the risk and the control that addresses it.',
+    'escalation-path': 'Escalation Path section. Format as a table with Situation, Escalate To, and Timeframe columns. Include specific names/roles and time expectations.',
+    'compliance-references': 'Compliance References section. Format as a table with Reference and Description columns. If the user mentions no specific regulations, write "No specific regulatory requirements. This SOP follows internal best practices."',
+    'completion-checklist': 'Completion Checklist section. Format as a table with Item and Verified By columns. Each item should be a simple yes/no verification. Assign each to Maker or Checker.',
+    'key-contacts': 'Key Contacts section. Format as a table with Party, Contact, and Role in this Process columns.',
+    'approval': 'Approval section. Format as a table with Role, Name, and Date columns. Include rows for Prepared By (Maker), Reviewed By (Checker), and Approved By.',
+    'review-schedule': 'Review Schedule section. Write one paragraph about the review cadence. Standard is quarterly (March 31, June 30, September 30, December 31) plus any material changes.',
+    'revision-history': 'Revision History section. Format as a table with class="rev-table" and columns Version, Date, Author, Changes.',
+  }
+
+  const context = sectionContext[sectionId] || 'a section of an SOP'
+
+  const prompt = `You are formatting content for the ${context}
+
+SOP Title: "${sopTitle || 'Untitled'}"
+
+The user has written the following rough notes. Rewrite them into clean, professional SOP content:
+- Direct, imperative, present tense ("Navigate to..." not "The user should navigate to...")
+- No em dashes, use regular dashes or rewrite the sentence
+- No emojis or casual language
+- Professional but readable
+- Be thorough but concise
+- Keep all the information the user provided, just clean up the writing and format
+
+Return ONLY the HTML content. Do not include any section heading (h2). Use appropriate HTML tags: <p> for paragraphs, <table> for tables (with <thead> and <tbody>), <ul>/<li> for lists, <strong> for bold, <div class="sub-label"> for sub-headings.
+
+User's notes:
+${userInput}`
+
+  const response = await callGemini(prompt)
+
+  return response
+    .replace(/```html\n?/gi, '')
+    .replace(/```\n?/g, '')
+    .trim()
+}
+
 // ── Check if Gemini is available ─────────────────────────────
 export function isGeminiAvailable() {
   return !!GEMINI_API_KEY
