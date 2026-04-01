@@ -1,12 +1,12 @@
 // ── Vega SOP Template ──────────────────────────────────────
-// Master template based on the Vega SOP document format.
+// Based on sop-template.html — the canonical template for all Vega SOPs.
 
 const VEGA_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1602.14 586.87" height="24" style="display:block;"><polygon points="474.94 371.81 694.38 371.81 694.38 320.83 474.94 320.83 474.94 184.06 727.34 184.06 727.34 133.09 416.51 133.09 416.51 575.71 733.55 575.71 733.55 524.74 474.94 524.74 474.94 371.81"/><path d="M1441.79,133.12h-62.16l-169.15,442.55h62.82l51.03-135.47,18-51.03,67.08-183.39h1.3l63.46,183.39,18,51.03,47.27,135.47h62.69l-160.34-442.55Z"/><path d="M0,133.09h64.04l115.63,361.8h1.24l123.09-361.8h61.54l-157.28,442.62h-60.3L0,133.09Z"/><path d="M182.77,0c-8.8,61.66-27.56,110.27-51.34,133.09,23.79,22.82,42.54,71.43,51.34,133.09,8.8-61.66,27.56-110.27,51.34-133.09-23.79-22.82-42.54-71.43-51.34-133.09Z"/><path d="M965.68,381.82h137.75v129.49c-10.38,6.49-21.85,11.63-34.51,15.59-19.29,6.09-40.54,9.07-63.72,9.07-27.33,0-51.03-5.05-71.23-15.28-20.07-10.1-36.65-23.7-49.73-40.67-12.95-16.97-22.66-36.78-28.88-59.06-6.22-22.41-9.33-45.85-9.33-70.33s3.63-46.11,10.88-67.74c7.25-21.5,17.74-40.41,31.47-56.6,13.6-16.19,30.3-29.01,49.99-38.85,19.69-9.71,41.96-14.63,66.82-14.63,21.12,0,39.89,2.46,56.21,7.25,16.45,4.79,30.56,11.27,42.61,19.56,8.28,5.7,16.7,12.56,23.96,20.08l33.41-43.52c-9.45-8.81-21.11-16.84-29.14-21.76-18-11.01-37.68-18.52-59.31-24.09-21.5-5.7-44.17-8.42-67.74-8.42-35.62,0-67.22,6.73-94.8,20.2-27.58,13.47-50.9,31.21-69.94,53.1-19.04,22.02-33.42,46.88-43.13,74.6-9.84,27.84-14.63,55.95-14.63,84.57,0,34.45,5.05,65.92,15.15,94.54,10.23,28.49,24.87,53.1,44.17,73.56,19.29,20.59,42.74,36.39,70.2,47.66,27.58,11.14,58.54,16.71,92.99,16.71,31.09,0,65.15-2.59,92.73-12.95,2.48-.88,5.08-1.96,7.76-3.17h0c.16-.07.32-.14.48-.22.19-.09.38-.17.58-.26,16.42-7.43,35.61-19.49,51.54-35.86v-207.45h-192.61v54.86Z"/></svg>`
 
 /**
- * Generate a blank SOP HTML document from metadata.
+ * Generate a blank SOP HTML from the canonical template.
  */
-export function generateSopHtml({ sopId, title, scope, category, owner, author, reviewCadence, date }) {
+export function generateSopHtml({ sopId, title, scope, category, owner, author, checker, reviewCadence, date }) {
   const today = date || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 
   return `<header class="doc-header">
@@ -17,7 +17,7 @@ export function generateSopHtml({ sopId, title, scope, category, owner, author, 
 <div class="title-block">
   <div class="sop-id">${sopId || 'SOP-001'}</div>
   <div class="sop-title">${title || 'Untitled Procedure'}</div>
-  <div class="sop-scope">${scope || 'Define the scope of this procedure.'}</div>
+  <div class="sop-scope">${scope || 'One sentence describing what this SOP covers and who it applies to.'}</div>
 </div>
 
 <div class="meta-block">
@@ -26,20 +26,33 @@ export function generateSopHtml({ sopId, title, scope, category, owner, author, 
   <p><strong>Category:</strong> ${category || 'General'}</p>
   <p><strong>Owner:</strong> ${owner || 'TBD'}</p>
   <p><strong>Maker:</strong> ${author || 'TBD'}</p>
-  <p><strong>Checker:</strong> TBD</p>
+  <p><strong>Checker:</strong> ${checker || 'TBD'}</p>
   <p><strong>Review Cycle:</strong> ${reviewCadence || 'Quarterly'}</p>
+  <p><strong>Classification:</strong> Internal / Confidential</p>
 </div>
 
 <div class="doc-body">
 
 <h2>1. Overview</h2>
-<p>Describe the purpose and context of this procedure.</p>
+<p>Describe the purpose of this SOP and its scope within Vega operations.</p>
+
+<div class="sub-label">1.1 Trigger</div>
+<p>This process is triggered when...</p>
+
+<div class="sub-label">1.2 Key Systems</div>
+<table>
+  <thead><tr><th>System</th><th>Used For</th><th>Access</th></tr></thead>
+  <tbody>
+    <tr><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
 
 <h2>2. Procedure</h2>
 
 <div class="phase">
   <span class="phase-num">PHASE 1</span>
   <span class="phase-title">Phase Title</span>
+  <span class="phase-note">Context or system</span>
 </div>
 
 <table>
@@ -49,25 +62,55 @@ export function generateSopHtml({ sopId, title, scope, category, owner, author, 
       <td><span class="step-num">01</span></td>
       <td>
         <span class="step-action">Action description</span>
-        <span class="step-detail">Additional detail and context.</span>
+        <span class="step-detail">Supporting detail, format requirements, or what happens next.</span>
       </td>
       <td><span class="maker">Maker</span></td>
+    </tr>
+    <tr>
+      <td><span class="step-num">02</span></td>
+      <td>
+        <span class="step-action">Verify before proceeding</span>
+        <span class="step-detail">Check criteria. If discrepancy found, take corrective action.</span>
+      </td>
+      <td><span class="checker">Checker</span></td>
     </tr>
   </tbody>
 </table>
 
-<h2>3. Related Documents</h2>
+<h2>3. Completion Checklist</h2>
+<p>Before closing out this process, confirm all of the following are complete.</p>
+
+<table>
+  <thead><tr><th>Item</th><th style="width:100px;">Verified By</th></tr></thead>
+  <tbody>
+    <tr><td></td><td>Maker</td></tr>
+    <tr><td></td><td>Checker</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Key Contacts</h2>
+<table>
+  <thead><tr><th>Party</th><th>Contact</th><th>Role in this Process</th></tr></thead>
+  <tbody>
+    <tr><td>Maker</td><td></td><td></td></tr>
+    <tr><td>Checker</td><td></td><td></td></tr>
+  </tbody>
+</table>
+
 <div class="xref">
-  <div class="xref-label">Cross-reference</div>
-  <div class="xref-item">Related SOP or document</div>
+  <div class="xref-label">Related SOPs</div>
+  <div class="xref-item">None yet</div>
 </div>
 
-<h2>4. Revision History</h2>
+<h2>5. Review Schedule</h2>
+<p>This SOP is reviewed quarterly at the end of each calendar quarter (March 31, June 30, September 30, December 31) and immediately upon any material change. At each review, confirm all steps, contacts, system references, and procedures remain current and update the revision history accordingly.</p>
+
+<h2>6. Revision History</h2>
 <table class="rev-table">
   <thead><tr>
-    <th style="width:60px;">Version</th>
+    <th style="width:65px;">Version</th>
     <th style="width:110px;">Date</th>
-    <th style="width:120px;">Author</th>
+    <th style="width:130px;">Author</th>
     <th>Changes</th>
   </tr></thead>
   <tbody>
@@ -110,6 +153,7 @@ export function wrapContentInTemplate({ sopId, title, category, owner, author, r
   <p><strong>Category:</strong> ${category || 'General'}</p>
   <p><strong>Owner:</strong> ${owner || 'TBD'}</p>
   <p><strong>Review Cycle:</strong> ${reviewCadence || 'Quarterly'}</p>
+  <p><strong>Classification:</strong> Internal / Confidential</p>
 </div>
 
 <div class="doc-body">
@@ -118,9 +162,9 @@ ${htmlContent}
 <h2>Revision History</h2>
 <table class="rev-table">
   <thead><tr>
-    <th style="width:60px;">Version</th>
+    <th style="width:65px;">Version</th>
     <th style="width:110px;">Date</th>
-    <th style="width:120px;">Author</th>
+    <th style="width:130px;">Author</th>
     <th>Changes</th>
   </tr></thead>
   <tbody>
