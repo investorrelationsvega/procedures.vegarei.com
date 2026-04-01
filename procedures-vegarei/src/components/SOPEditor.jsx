@@ -88,7 +88,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
       }
       setDirty(false)
       setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      onClose()
     } catch (err) {
       setError(err.message)
     } finally {

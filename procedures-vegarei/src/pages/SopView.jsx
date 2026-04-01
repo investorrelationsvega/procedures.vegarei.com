@@ -373,7 +373,7 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
                 onClick={() => setShowHistory(true)}
                 className="text-xs font-mono border border-gray-300 px-3 py-1.5 hover:border-black transition-colors"
               >
-                History
+                Revision History
               </button>
             )}
 
