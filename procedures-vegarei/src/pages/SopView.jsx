@@ -5,7 +5,7 @@ import {
   loadSopHtml, loadSopMeta, loadIndex,
   updateSopInIndex, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
 } from '../lib/drive'
-import { fetchDocContent } from '../services/docsService'
+import { exportGoogleDocAsHtml } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
 import HistoryPanel from '../components/HistoryPanel'
 import SOPEditor from '../components/SOPEditor'
@@ -127,7 +127,7 @@ export default function SopView() {
           // Try loading as Google Doc first, fall back to raw HTML
           let h
           try {
-            h = await fetchDocContent(entry.htmlFileId, token)
+            h = await exportGoogleDocAsHtml(entry.htmlFileId, token)
           } catch {
             h = await loadSopHtml(entry.htmlFileId, token)
           }
@@ -157,7 +157,7 @@ export default function SopView() {
       try {
         let h
         try {
-          h = await fetchDocContent(sopEntry.htmlFileId, token)
+          h = await exportGoogleDocAsHtml(sopEntry.htmlFileId, token)
         } catch {
           h = await loadSopHtml(sopEntry.htmlFileId, token)
         }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { fetchDocContent, saveDocContent } from '../services/docsService'
-import { fetchDriveFile, saveSopHtml } from '../lib/drive'
+import { fetchDriveFile, saveSopHtml, exportGoogleDocAsHtml } from '../lib/drive'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
@@ -42,10 +42,10 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
       setLoading(true)
       setError(null)
       try {
-        // Try Google Docs API first
+        // Try loading as Google Doc (export as HTML), fall back to raw file
         let html
         try {
-          html = await fetchDocContent(docId, accessToken)
+          html = await exportGoogleDocAsHtml(docId, accessToken)
           isGoogleDoc.current = true
         } catch {
           // Fall back to raw HTML file
