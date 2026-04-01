@@ -5,28 +5,40 @@
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
 
-async function callGemini(prompt) {
+async function callGemini(prompt, retries = 3) {
   if (!GEMINI_API_KEY) throw new Error('Gemini API key not configured')
 
-  const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 4096,
-      },
-    }),
-  })
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 4096,
+        },
+      }),
+    })
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Gemini API error: ${res.status} - ${err}`)
+    if (res.ok) {
+      const data = await res.json()
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    }
+
+    // Rate limited - wait and retry
+    if (res.status === 429 && attempt < retries) {
+      const delay = Math.pow(2, attempt + 1) * 1000 // 2s, 4s, 8s
+      await new Promise(r => setTimeout(r, delay))
+      continue
+    }
+
+    // Other error or final retry
+    if (res.status === 429) {
+      throw new Error('Gemini is busy. Wait a few seconds and try again.')
+    }
+    throw new Error(`Gemini error (${res.status}). Try again in a moment.`)
   }
-
-  const data = await res.json()
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 }
 
 // ── Grammar and spelling check ───────────────────────────────
