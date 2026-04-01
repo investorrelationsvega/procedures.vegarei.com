@@ -294,6 +294,14 @@
   animation: star-glow 2.5s ease-in-out infinite;
 }
 
+/* ── Section Editor Placeholder ─────────────────────────── */
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: #ccc;
+  font-style: italic;
+  pointer-events: none;
+}
+
 /* ── Print Styles ────────────────────────────────────────── */
 @media print {
   nav, .sticky, button, .grid-bg, footer { display: none !important; }

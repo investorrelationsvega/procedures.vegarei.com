@@ -155,6 +155,39 @@ function parseSopResponse(response) {
   return sections
 }
 
+// ── Generate a draft for a single SOP section ───────────────
+// Used by the section-based editor's "AI Draft" button.
+
+export async function generateSectionDraft(sectionId, guidanceText, sopTitle) {
+  const prompt = `You are writing one section of a Standard Operating Procedure (SOP) for "${sopTitle || 'a business process'}".
+
+Writing rules:
+- Direct, imperative, present tense: "Navigate to..." not "The user should navigate to..."
+- Professional but readable
+- No em dashes anywhere, use regular dashes or rewrite
+- No emojis or casual language
+- Be specific and thorough
+
+Based on the guidance below, generate a realistic draft for this section. Use placeholder names and systems where specific details are not available, but make them realistic (e.g. "Juniper Square" not "System X").
+
+Return ONLY the HTML content for this section. Do not include the section heading (h2). Use appropriate HTML tags: <p> for paragraphs, <table> for tables, <ul>/<li> for lists, <strong> for bold. For tables, use <thead><tr><th> for headers and <tbody><tr><td> for data rows.
+
+Section guidance:
+${guidanceText}
+
+Generate the section content now:`
+
+  const response = await callGemini(prompt)
+
+  // Clean up any markdown artifacts
+  let html = response
+    .replace(/```html\n?/gi, '')
+    .replace(/```\n?/g, '')
+    .trim()
+
+  return html
+}
+
 // ── Check if Gemini is available ─────────────────────────────
 export function isGeminiAvailable() {
   return !!GEMINI_API_KEY
