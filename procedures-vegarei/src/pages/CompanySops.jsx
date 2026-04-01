@@ -431,6 +431,13 @@ export default function CompanySops() {
               >
                 Review &amp; Import
               </button>
+              <button
+                onClick={() => setUnindexedFiles([])}
+                className="text-[10px] font-mono text-[#797469] hover:text-black transition-colors px-2 py-1"
+                title="Dismiss"
+              >
+                &times;
+              </button>
             </div>
           )}
 
