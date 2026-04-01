@@ -294,6 +294,75 @@
   animation: star-glow 2.5s ease-in-out infinite;
 }
 
+/* ── Edit-Mode Overrides ────────────────────────────────── */
+/* Reset heavy display styling so the editor is readable    */
+.sop-document.sop-editing h1,
+.sop-document.sop-editing h2,
+.sop-document.sop-editing h3 {
+  font-family: 'Inter', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  border-bottom: none;
+}
+.sop-document.sop-editing h1 { font-size: 22pt; font-weight: 700; margin: 20px 0 10px; }
+.sop-document.sop-editing h2 { font-size: 16pt; font-weight: 700; margin: 18px 0 8px; padding-bottom: 0; }
+.sop-document.sop-editing h3 { font-size: 13pt; font-weight: 600; margin: 14px 0 6px; }
+
+.sop-document.sop-editing p { font-size: 11pt; }
+.sop-document.sop-editing { font-size: 11pt; }
+
+.sop-document.sop-editing .sub-label,
+.sop-document.sop-editing .phase-title,
+.sop-document.sop-editing .phase-num,
+.sop-document.sop-editing .phase-note {
+  font-family: 'Inter', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 10pt;
+}
+
+.sop-document.sop-editing .header-label,
+.sop-document.sop-editing .header-right,
+.sop-document.sop-editing .sop-id,
+.sop-document.sop-editing .doc-id {
+  font-family: 'Inter', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 10pt;
+  color: #555;
+}
+
+.sop-document.sop-editing .meta-cell .ml,
+.sop-document.sop-editing .xref-label,
+.sop-document.sop-editing .trigger-next .tn-label {
+  font-family: 'Inter', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 9pt;
+}
+
+.sop-document.sop-editing th {
+  font-family: 'Inter', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 10pt;
+}
+
+.sop-document.sop-editing .maker,
+.sop-document.sop-editing .checker,
+.sop-document.sop-editing .role-badge {
+  font-family: 'Inter', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 9pt;
+}
+
+.sop-document.sop-editing .mono,
+.sop-document.sop-editing .meta-block strong {
+  font-family: 'Inter', sans-serif;
+  font-size: 10pt;
+}
+
 /* ── Print Styles ────────────────────────────────────────── */
 @media print {
   nav, .sticky, button, .grid-bg, footer { display: none !important; }

@@ -177,7 +177,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
                 contentEditable
                 suppressContentEditableWarning
                 onInput={handleInput}
-                className="sop-document focus:outline-none"
+                className="sop-document sop-editing focus:outline-none"
                 style={{ minHeight: 600 }}
               />
             )}
