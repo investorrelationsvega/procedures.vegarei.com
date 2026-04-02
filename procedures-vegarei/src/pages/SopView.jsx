@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import {
   loadSopHtml, loadSopMeta, loadIndex,
-  updateSopInIndex, CATEGORIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
+  updateSopInIndex, CATEGORIES, COMPANIES, REVIEW_CADENCES, getReviewStatus, logAuditEvent,
   getFileParent, getArchiveFolderIn, moveFileToFolder,
   deleteFile, removeSopFromIndex, getCategoryFolder,
 } from '../lib/drive'
@@ -311,6 +311,7 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
   }, [sopEntry, token, meta, user, html, id])
 
   const cat = sopEntry ? CATEGORIES[sopEntry.category] : null
+  const company = sopEntry ? COMPANIES[sopEntry.company] : null
 
   return (
     <div className="min-h-screen bg-white">
@@ -320,14 +321,20 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs font-mono text-[#797469]">
             <Link to="/" className="hover:text-black transition-colors">Procedures</Link>
-            <span>&rsaquo;</span>
-            {cat && (
+            {company && (
               <>
-                <span style={{ color: cat.color }}>{cat.label}</span>
                 <span>&rsaquo;</span>
+                <Link to={`/${sopEntry.company}`} className="hover:text-black transition-colors">{company.label}</Link>
               </>
             )}
-            <span className="text-black font-bold">{id}</span>
+            {cat && (
+              <>
+                <span>&rsaquo;</span>
+                <span style={{ color: cat.color }}>{cat.label}</span>
+              </>
+            )}
+            <span>&rsaquo;</span>
+            <span className="text-black font-bold">{sopEntry?.title || id}</span>
           </div>
 
           {/* Actions */}

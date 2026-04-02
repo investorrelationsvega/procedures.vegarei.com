@@ -12,103 +12,89 @@ const WIZARD_STEPS = [
     id: 'purpose-and-scope',
     heading: '1. Purpose and Scope',
     question: 'What is the purpose of this SOP, and what does it cover?',
-    explanation: 'The purpose states why this SOP exists in one to two sentences. The scope defines what this process covers and what it does not. Be specific about boundaries so there is no confusion.',
-    example: 'Purpose: "This SOP ensures consistent and accurate processing of monthly investor distributions for all Vega Assisted Living Fund II, L.P. limited partners."\n\nScope: "Covers all Class A and Class B limited partner distributions processed through Juniper Square. Does not cover GP distributions, special allocations, or one-time redemption payments."',
+    guide: 'State why this SOP exists in one to two sentences, then define what it covers and what it does not. Be specific about boundaries.\n\nExample:\nPurpose: "This SOP ensures consistent and accurate processing of monthly investor distributions for all Vega Assisted Living Fund II, L.P. limited partners."\n\nScope: "Covers all Class A and Class B limited partner distributions processed through Juniper Square. Does not cover GP distributions, special allocations, or one-time redemption payments."',
   },
   {
     id: 'definitions',
     heading: '2. Definitions',
     question: 'What terms, acronyms, or systems would someone need to know?',
-    explanation: 'Think about a new employee on their first day. What would they need defined? Include acronyms (NAV, ACH, AUM), software names (Syndication Pro, QuickBooks), role titles (Fund Controller, IR Associate), industry terms (capital call, waterfall), and any internal shorthand.',
-    example: 'NAV - Net Asset Value, calculated monthly by Fund Administration\nACH - Automated Clearing House, the electronic payment method used for distributions\nJuniper Square - investor portal used to send statements and process payments\nFund Controller - person responsible for fund accounting and financial reporting',
+    guide: 'List terms a new employee would need defined: acronyms (NAV, ACH, AUM), software names (Syndication Pro, QuickBooks), role titles (Fund Controller, IR Associate), industry terms (capital call, waterfall), and any internal shorthand.\n\nExample:\nNAV - Net Asset Value, calculated monthly by Fund Administration\nACH - Automated Clearing House, electronic payment method\nJuniper Square - investor portal for statements and payments',
   },
   {
     id: 'overview',
     heading: '3. Overview',
     question: 'Describe the process from start to finish, what triggers it, and what systems are involved.',
-    explanation: 'Write a brief summary someone could read to understand the full picture. Then specify what event kicks off this process and list each system used.',
-    example: 'This process runs on the first business day of each month. The Fund Controller pulls the NAV report from QuickBooks, calculates each investor distribution in Excel, uploads the payment file to Juniper Square, and sends distribution notices to all LPs.\n\nTriggered by: First business day of each month\nSystems: QuickBooks (NAV data), Excel (calculations), Juniper Square (payments and notices)',
+    guide: 'Summarize the full process so someone can understand the big picture. Include what event starts it and which systems are used.\n\nExample:\nThis process runs on the first business day of each month. The Fund Controller pulls the NAV report from QuickBooks, calculates distributions in Excel, uploads the payment file to Juniper Square, and sends notices to all LPs.\n\nTriggered by: First business day of each month\nSystems: QuickBooks (NAV data), Excel (calculations), Juniper Square (payments)',
   },
   {
     id: 'procedure',
     heading: '4. Procedure',
     question: 'Walk through each step of the process in order. Who does what?',
-    explanation: 'List every step someone would need to follow. Be specific enough that a new person could do this without asking for help. For each step, note whether it is done by the Maker (person executing) or Checker (person verifying).',
-    example: 'Step 1: Log into QuickBooks and export the monthly NAV report (Maker)\nStep 2: Open the distribution calculator spreadsheet and paste in the NAV figures (Maker)\nStep 3: Verify the total distribution amount matches the NAV report (Checker)\nStep 4: Upload the payment file to Juniper Square (Maker)\nStep 5: Review all payment amounts in Juniper Square before releasing (Checker)\nStep 6: Send distribution notices to all LPs through Juniper Square (Maker)',
+    guide: 'List every step in order. Be specific enough that a new person could follow without help. Mark each step as Maker (person executing) or Checker (person verifying).\n\nExample:\nStep 1: Log into QuickBooks and export the monthly NAV report (Maker)\nStep 2: Open the distribution calculator and paste in NAV figures (Maker)\nStep 3: Verify total distribution matches the NAV report (Checker)\nStep 4: Upload payment file to Juniper Square (Maker)\nStep 5: Review all amounts before releasing (Checker)',
   },
   {
     id: 'risks-and-controls',
     heading: '5. Risks and Controls',
     question: 'What could go wrong in this process, and what prevents it?',
-    explanation: 'Think worst-case: wrong numbers, missed deadlines, unauthorized access, data sent to the wrong person. For each risk, describe the specific safeguard that catches or prevents it.',
-    example: 'Risk: Incorrect distribution amount sent to an investor\nControl: Checker independently verifies all amounts against the NAV report before any payment is released\n\nRisk: Payment sent to wrong bank account\nControl: Bank details are locked in Juniper Square and require dual approval to change',
+    guide: 'Think worst-case: wrong numbers, missed deadlines, unauthorized access, data sent to the wrong person. For each risk, describe the safeguard.\n\nExample:\nRisk: Incorrect distribution amount sent to an investor\nControl: Checker independently verifies all amounts against the NAV report before payment\n\nRisk: Payment sent to wrong bank account\nControl: Bank details locked in Juniper Square, require dual approval to change',
   },
   {
     id: 'escalation-path',
     heading: '6. Escalation Path',
     question: 'Who gets contacted when something goes wrong, and how quickly?',
-    explanation: 'Include names or roles and specific timeframes. Remove ambiguity about what to do when a problem comes up.',
-    example: 'Distribution discrepancy over $500: Notify Fund Controller within one business day\nIssue unresolved after 48 hours: Escalate to Managing Partner immediately\nSystem outage preventing payment: Contact IT and notify investors of delay within 4 hours',
+    guide: 'Include names or roles and specific timeframes.\n\nExample:\nDiscrepancy over $500: Notify Fund Controller within one business day\nUnresolved after 48 hours: Escalate to Managing Partner immediately\nSystem outage: Contact IT and notify investors within 4 hours',
   },
   {
     id: 'compliance-references',
     heading: '7. Compliance References',
     question: 'Are there any regulations, policies, or legal requirements tied to this process?',
-    explanation: 'List any rules or agreements this SOP relates to. If none, that is fine. Just note that the SOP follows internal best practices.',
-    example: 'Fund LPA Section 8.3 - Distribution provisions and payment timing\nSEC Rule 206(4)-7 - Compliance program requirements\nVega Internal Policy 4.2 - Investor communications standards',
+    guide: 'List any rules or agreements this SOP relates to. If none apply, write "No specific regulatory requirements. This SOP follows internal best practices."\n\nExample:\nFund LPA Section 8.3 - Distribution provisions and payment timing\nSEC Rule 206(4)-7 - Compliance program requirements',
   },
   {
     id: 'completion-checklist',
     heading: '8. Completion Checklist',
     question: 'What needs to be verified before this process is considered done?',
-    explanation: 'List simple yes/no items. Each should be assigned to either the Maker or Checker.',
-    example: 'All distribution amounts match NAV report (Checker)\nPayment file uploaded to Juniper Square (Maker)\nAll LP notices sent (Maker)\nBank confirmations received for all payments (Checker)',
+    guide: 'List simple yes/no items, each assigned to Maker or Checker.\n\nExample:\nAll distribution amounts match NAV report (Checker)\nPayment file uploaded to Juniper Square (Maker)\nAll LP notices sent (Maker)\nBank confirmations received (Checker)',
   },
   {
     id: 'key-contacts',
     heading: '9. Key Contacts',
     question: 'Who is involved in this process?',
-    explanation: 'List the Maker, Checker, and any external parties with their contact info and role.',
-    example: 'Maker: J Jones, j@vegarei.com - Prepares and executes distributions\nChecker: Margaret McCann, m@vegarei.com - Reviews and approves all payments\nExternal: First National Bank, wire desk 555-0100 - Processes outgoing wires',
+    guide: 'List the Maker, Checker, and any external parties with contact info and role.\n\nExample:\nMaker: J Jones, j@vegarei.com - Prepares and executes distributions\nChecker: Margaret McCann, m@vegarei.com - Reviews and approves payments\nExternal: First National Bank, wire desk 555-0100 - Processes outgoing wires',
   },
   {
     id: 'approval',
     heading: '10. Approval',
     question: 'Who needs to sign off on this SOP?',
-    explanation: 'List who prepared it, who reviewed it, and who gave final approval. Include dates.',
-    example: 'Prepared by: J Jones (March 31, 2026)\nReviewed by: Margaret McCann\nApproved by: Managing Partner',
+    guide: 'List who prepared it, who reviewed it, and who approved it.\n\nExample:\nPrepared by: J Jones (March 31, 2026)\nReviewed by: Margaret McCann\nApproved by: Managing Partner',
   },
   {
     id: 'review-schedule',
     heading: '11. Review Schedule',
     question: 'How often should this SOP be reviewed?',
-    explanation: 'Standard is quarterly (March 31, June 30, September 30, December 31) plus whenever there is a material change. You can adjust if needed.',
-    example: 'Quarterly review at the end of each calendar quarter, and immediately if the distribution process, systems, or personnel change.',
+    guide: 'Standard is quarterly (March 31, June 30, September 30, December 31) plus any material change. Adjust if needed.\n\nExample:\nQuarterly review at the end of each calendar quarter, and immediately if the process, systems, or personnel change.',
   },
 ]
 
-// ── Generate a copy-paste prompt for AI ──────────────────────
+// ── Generate copy-paste prompt for AI ────────────────────────
 
 function buildPromptForSection(step, sopTitle) {
   return `I am writing a Standard Operating Procedure (SOP) titled "${sopTitle || 'Untitled'}".
 
-I need you to write the "${step.heading}" section. Here is what this section should cover:
+I need help writing the "${step.heading}" section.
 
-${step.explanation}
-
-Here is an example of what good output looks like:
-${step.example}
+Here is what this section should cover:
+${step.guide}
 
 Writing rules:
-- Write in direct, imperative, present tense ("Navigate to..." not "The user should navigate to...")
+- Direct, imperative, present tense ("Navigate to..." not "The user should navigate to...")
 - Professional but readable tone
-- Do not use em dashes anywhere. Use regular dashes or rewrite the sentence.
+- Do not use em dashes. Use regular dashes or rewrite.
 - Be specific and thorough
 - Keep sentences concise
 
-I will provide my rough notes below. Please rewrite them into clean, professional SOP content for this section. Format your response as plain text that I can paste into my SOP editor.
+Please rewrite my notes below into clean, professional SOP content for this section:
 
-My notes:
 [PASTE YOUR NOTES HERE]`
 }
 
@@ -198,7 +184,7 @@ function parseExistingContent(html) {
 
     if (sectionId === 'revision-history') {
       revisionHtml = contentHtml
-    } else if (sectionId && !isPlaceholderContent(contentText)) {
+    } else if (sectionId && !isPlaceholderContent(contentText) && contentText.length > 0) {
       sectionContent[sectionId] = contentHtml
     }
   }
@@ -234,6 +220,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
   const [currentStep, setCurrentStep] = useState(0)
   const [userInput, setUserInput] = useState('')
   const [copied, setCopied] = useState(false)
+  const [showGuide, setShowGuide] = useState(true)
 
   const step = WIZARD_STEPS[currentStep]
   const totalSteps = WIZARD_STEPS.length
@@ -271,7 +258,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
     load()
   }, [docId, accessToken])
 
-  // When navigating to a step, load existing content if any
+  // When navigating to a step, load existing content
   useEffect(() => {
     if (!step) return
     const existing = sectionContent[step.id]
@@ -279,8 +266,10 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
       const tmp = document.createElement('div')
       tmp.innerHTML = existing
       setUserInput(tmp.textContent.trim())
+      setShowGuide(false)
     } else {
       setUserInput('')
+      setShowGuide(true)
     }
     setCopied(false)
   }, [currentStep])
@@ -295,7 +284,6 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
 
   const handleSaveSection = useCallback(() => {
     if (userInput.trim()) {
-      // Wrap plain text in paragraphs
       const html = userInput.trim().split(/\n{2,}/).map(p =>
         `<p>${p.trim().replace(/\n/g, '<br>')}</p>`
       ).join('\n')
@@ -411,39 +399,26 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
           </div>
         ) : step ? (
           <div className="max-w-2xl mx-auto px-8 py-12">
-            {/* Section label */}
+            {/* Section heading */}
             <div style={mono} className="text-[10px] uppercase tracking-wider text-[#797469] mb-2">
               Section {currentStep + 1} of {totalSteps}
             </div>
             <h2 className="text-xl font-bold text-[#111] mb-2">{step.heading}</h2>
+            <p className="text-base text-[#111] font-medium mb-5">{step.question}</p>
 
-            {/* Question */}
-            <p className="text-base text-[#111] font-medium mb-4">{step.question}</p>
+            {/* Collapsible guide with example */}
+            <button
+              onClick={() => setShowGuide(!showGuide)}
+              className="text-xs font-mono text-[#6366f1] hover:underline mb-3 flex items-center gap-1"
+            >
+              {showGuide ? 'Hide guidance' : 'Show guidance and example'}
+            </button>
 
-            {/* Explanation */}
-            <div className="bg-gray-50 border border-gray-200 rounded px-4 py-3 mb-4">
-              <p className="text-sm text-gray-600 leading-relaxed">{step.explanation}</p>
-            </div>
-
-            {/* Example */}
-            <div className="bg-[#f0f5f5] border border-[#27474D]/10 rounded px-4 py-3 mb-4">
-              <div style={mono} className="text-[9px] uppercase tracking-wider text-[#27474D] font-bold mb-1.5">Example</div>
-              <pre className="text-xs text-[#27474D] whitespace-pre-wrap font-sans leading-relaxed">{step.example}</pre>
-            </div>
-
-            {/* AI prompt helper */}
-            <div className="bg-[#faf5ff] border border-[#6366f1]/15 rounded px-4 py-3 mb-6 flex items-center justify-between">
-              <div>
-                <div style={mono} className="text-[9px] uppercase tracking-wider text-[#6366f1] font-bold mb-0.5">Need help writing this?</div>
-                <p className="text-xs text-gray-600">Copy a ready-made prompt to paste into ChatGPT, Gemini, Claude, or any AI.</p>
+            {showGuide && (
+              <div className="bg-gray-50 border border-gray-200 rounded px-4 py-3 mb-5">
+                <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans leading-relaxed">{step.guide}</pre>
               </div>
-              <button
-                onClick={handleCopyPrompt}
-                className="text-xs font-mono px-4 py-2 border border-[#6366f1]/30 text-[#6366f1] hover:border-[#6366f1] hover:bg-[#6366f1]/5 transition-colors flex-shrink-0 ml-4"
-              >
-                {copied ? 'Copied!' : 'Copy Prompt'}
-              </button>
-            </div>
+            )}
 
             {/* Text input */}
             <textarea
@@ -451,10 +426,10 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
               onChange={e => setUserInput(e.target.value)}
               placeholder="Type or paste your content here..."
               className="w-full border border-gray-300 rounded px-4 py-3 text-sm leading-relaxed focus:outline-none focus:border-[#27474D] transition-colors resize-none"
-              rows={8}
+              rows={10}
             />
 
-            {/* Navigation */}
+            {/* Actions row */}
             <div className="flex items-center gap-3 mt-4">
               {currentStep > 0 && (
                 <button
@@ -464,6 +439,14 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
                   Back
                 </button>
               )}
+
+              {/* Copy prompt helper */}
+              <button
+                onClick={handleCopyPrompt}
+                className="text-xs font-mono text-[#6366f1] hover:underline px-2 py-2"
+              >
+                {copied ? 'Copied!' : 'Copy AI prompt'}
+              </button>
 
               <div className="flex-1" />
 

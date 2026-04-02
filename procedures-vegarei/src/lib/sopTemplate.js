@@ -315,23 +315,43 @@ export function stripUnfilledSections(html) {
       el = el.nextElementSibling
     }
 
-    // Check if section content is only placeholder text or empty
-    const sectionText = sectionEls.map(e => e.textContent).join(' ')
-    const hasOnlyPlaceholders = sectionEls.length === 0 || PLACEHOLDER_SIGNATURES.some(sig => sectionText.includes(sig))
-
-    // Check if all table body cells are empty
-    const tables = sectionEls.filter(e => e.tagName === 'TABLE')
-    const allTablesEmpty = tables.length > 0 && tables.every(table => {
-      const cells = [...table.querySelectorAll('td')]
-      return cells.every(td => !td.textContent.trim() || td.textContent.trim() === 'Maker' || td.textContent.trim() === 'Checker')
-    })
-
     // Skip sections that should always show
     const headingText = h2.textContent.trim().toLowerCase()
     if (headingText.includes('review schedule') || headingText.includes('revision history')) continue
 
-    // Remove section if unfilled
-    if (hasOnlyPlaceholders && (sectionEls.length === 0 || allTablesEmpty || !tables.length)) {
+    // Section is unfilled if it has NO elements at all
+    if (sectionEls.length === 0) {
+      h2.remove()
+      continue
+    }
+
+    // Check if ALL text content is only placeholder phrases
+    const sectionText = sectionEls.map(e => e.textContent).join(' ').trim()
+    if (!sectionText) {
+      sectionEls.forEach(e => e.remove())
+      h2.remove()
+      continue
+    }
+
+    // Count how many placeholder phrases appear
+    const placeholderHits = PLACEHOLDER_SIGNATURES.filter(sig => sectionText.includes(sig)).length
+    // Only strip if the section is predominantly placeholder text (no real content mixed in)
+    // Use a simple heuristic: if more than half the text is placeholder phrases, strip it
+    const totalWords = sectionText.split(/\s+/).length
+    const isOnlyPlaceholder = placeholderHits > 0 && totalWords < 100
+
+    // Check if all table body cells are empty (tables with only Maker/Checker preset values)
+    const tables = sectionEls.filter(e => e.tagName === 'TABLE')
+    const allTablesEmpty = tables.length > 0 && tables.every(table => {
+      const cells = [...table.querySelectorAll('td')]
+      return cells.every(td => {
+        const t = td.textContent.trim()
+        return !t || t === 'Maker' || t === 'Checker'
+      })
+    })
+
+    // Only remove if it truly looks unfilled
+    if (isOnlyPlaceholder && (tables.length === 0 || allTablesEmpty)) {
       sectionEls.forEach(e => e.remove())
       h2.remove()
     }
