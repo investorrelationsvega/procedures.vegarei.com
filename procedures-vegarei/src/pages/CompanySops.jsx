@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { loadIndex, CATEGORIES, COMPANIES, createDriveFile, createGoogleDoc, addSopToIndex, getReviewStatus, getCompanyFolder, getCategoryFolder, cacheFolderIds, findUnindexedFiles } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
+import { TEMPLATE_VERSION } from '../lib/sopTemplate'
 import { DEFAULT_SOP_HTML, generateSopHtml, wrapContentInTemplate } from '../lib/sopTemplate'
 import SopCard from '../components/SopCard'
 import CreateSopDialog from '../components/CreateSopDialog'
@@ -192,6 +193,7 @@ export default function CompanySops() {
         company: comp,
         reviewCadence: reviewCadence || 'quarterly',
         creatorEmail: user?.email || '',
+        templateVersion: TEMPLATE_VERSION,
         htmlFileId: htmlFile.id,
         metaFileId: metaFile.id,
       }

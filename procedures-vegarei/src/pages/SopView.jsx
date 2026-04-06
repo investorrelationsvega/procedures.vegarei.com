@@ -10,7 +10,7 @@ import {
 import { fetchDocContent } from '../services/docsService'
 import { exportGoogleDocAsHtml } from '../lib/drive'
 import { MOCK_INDEX } from '../lib/mockData'
-import { reconstructTemplate, stripUnfilledSections } from '../lib/sopTemplate'
+import { reconstructTemplate, stripUnfilledSections, TEMPLATE_VERSION } from '../lib/sopTemplate'
 import HistoryPanel from '../components/HistoryPanel'
 import SOPEditor from '../components/SOPEditor'
 import AuditLog from '../components/AuditLog'
@@ -114,11 +114,12 @@ export default function SopView() {
       const updatedIndex = await updateSopInIndex(index, sopEntry.id, {
         lastReviewed: now,
         status: 'active',
+        templateVersion: TEMPLATE_VERSION,
       }, token)
 
       setMeta(updatedMeta)
       setIndex(updatedIndex)
-      setSopEntry(prev => ({ ...prev, lastReviewed: now, status: 'active' }))
+      setSopEntry(prev => ({ ...prev, lastReviewed: now, status: 'active', templateVersion: TEMPLATE_VERSION }))
     } catch (err) {
       console.error(err)
       alert('Failed to complete review. Check Drive permissions.')
@@ -500,6 +501,26 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding
           </div>
         )
       })()}
+
+      {/* Template update banner */}
+      {sopEntry && isAuthed && sopEntry.status !== 'archived' && (!sopEntry.templateVersion || sopEntry.templateVersion < TEMPLATE_VERSION) && (
+        <div className="border-b bg-[#f0f5ff] border-[#6366f1]/20">
+          <div className="max-w-screen-xl mx-auto px-8 py-2.5 flex items-center gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[#6366f1]">
+              Template Updated
+            </span>
+            <span className="text-xs text-[#4338ca]">
+              The SOP template has been updated since this document was created. New sections may be available. Edit this SOP during your next review to bring it up to date.
+            </span>
+            <button
+              onClick={() => setEditing(true)}
+              className="ml-auto text-[10px] font-mono uppercase tracking-wider border border-[#6366f1]/30 text-[#6366f1] px-3 py-1 hover:bg-[#6366f1]/10 transition-colors flex-shrink-0"
+            >
+              Update Now
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Archived banner */}
       {sopEntry?.status === 'archived' && (
