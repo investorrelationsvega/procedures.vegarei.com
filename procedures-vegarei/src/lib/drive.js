@@ -431,7 +431,7 @@ export const COMPANIES = {
   'capital-markets':     { label: 'Capital Markets',    prefix: 'CM',  categories: ['origination', 'underwriting', 'closing', 'compliance', 'reporting', 'operations'] },
   'development':         { label: 'Development',        prefix: 'DEV', categories: ['land-acq', 'permits', 'construction', 'finance', 'compliance', 'operations'] },
   'hospice':             { label: 'Hospice',            prefix: 'HSP', categories: ['patient-care', 'clinical', 'compliance', 'billing', 'hr', 'operations'] },
-  'private-equity':      { label: 'Private Equity',     prefix: 'PE',  categories: ['investor', 'fund-admin', 'compliance', 'tax', 'legal', 'operations'] },
+  'private-equity':      { label: 'Private Equity',     prefix: 'PE',  categories: ['investor', 'fund-admin', 'compliance', 'tax', 'legal'] },
   'property-management': { label: 'Property Management', prefix: 'PM', categories: ['occupancy', 'maintenance', 'financials', 'systems'] },
   'valuations':          { label: 'Valuations',         prefix: 'VAL', categories: ['appraisal', 'review', 'compliance', 'quality', 'reporting', 'operations'] },
   'employee-handbook':   { label: 'Employee Handbook',  prefix: 'EHB', categories: ['policies', 'benefits', 'conduct', 'hr', 'safety', 'technology'] },
