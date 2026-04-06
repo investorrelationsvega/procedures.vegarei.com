@@ -59,7 +59,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
     return generateSopId(company, category, existingSops || [])
   }, [company, category, existingSops])
 
-  const canSubmit = title.trim() && category && subcategory.trim()
+  const canSubmit = title.trim() && category
 
   const handleAddCustom = () => {
     if (!customLabel.trim() || !customCode.trim()) return
@@ -286,35 +286,22 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
             )}
           </Field>
 
-          {/* Subcategory */}
-          {category && (
-            <Field label="Subcategory">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={subcategory}
-                  onChange={e => setSubcategory(e.target.value)}
-                  placeholder="e.g. Tenant Onboarding"
-                  list={`subcategory-options-${category}`}
-                  className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-black"
-                />
-                <datalist id={`subcategory-options-${category}`}>
-                  {existingSubcategories.map(sub => (
-                    <option key={sub} value={sub} />
-                  ))}
-                </datalist>
+          {/* SOP ID preview - show right after category selection */}
+          {sopId && (
+            <div className="bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
+              <div>
+                <p style={mono} className="text-[9px] uppercase tracking-widest text-[#566F69] mb-1">
+                  SOP ID (auto-generated)
+                </p>
+                <p style={mono} className="text-sm font-bold text-black tracking-wider">
+                  {sopId}
+                </p>
               </div>
-              {subcategory.trim() && subcategoryExists && (
-                <p className="text-[10px] text-[#797469] font-mono mt-1">
-                  Existing subcategory — SOPs will be grouped together
-                </p>
-              )}
-              {subcategory.trim() && !subcategoryExists && existingSubcategories.length > 0 && (
-                <p className="text-[10px] text-[#22c55e] font-mono mt-1">
-                  New subcategory
-                </p>
-              )}
-            </Field>
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ background: CATEGORIES[category]?.color }}
+              />
+            </div>
           )}
 
           {/* Title */}
@@ -358,23 +345,6 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
             </div>
           </Field>
 
-          {/* SOP ID preview */}
-          {sopId && (
-            <div className="bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
-              <div>
-                <p style={mono} className="text-[9px] uppercase tracking-widest text-[#566F69] mb-1">
-                  SOP ID (auto-generated)
-                </p>
-                <p style={mono} className="text-sm font-bold text-black tracking-wider">
-                  {sopId}
-                </p>
-              </div>
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ background: CATEGORIES[category]?.color }}
-              />
-            </div>
-          )}
         </div>
 
         {/* Actions */}
