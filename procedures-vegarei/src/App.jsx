@@ -5,6 +5,7 @@ import Nav from './components/Nav'
 import Home from './pages/Home'
 import CompanySops from './pages/CompanySops'
 import SopView from './pages/SopView'
+import ReviewDashboard from './pages/ReviewDashboard'
 import './styles/global.css'
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
               <Routes>
                 <Route path="/"           element={<Home />} />
 
+                <Route path="/reviews"    element={<ReviewDashboard />} />
                 <Route path="/sop/:id"    element={<SopView />} />
                 <Route path="/:company"   element={<CompanySops />} />
               </Routes>

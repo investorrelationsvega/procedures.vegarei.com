@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import HelpPanel from './HelpPanel'
 
@@ -8,6 +8,7 @@ const mono = { fontFamily: "'Space Mono', monospace" }
 export default function Nav() {
   const { user, login, logout, isAuthed } = useAuth()
   const [showHelp, setShowHelp] = useState(false)
+  const location = useLocation()
 
   return (
     <>
@@ -26,6 +27,16 @@ export default function Nav() {
         </Link>
 
         <div className="flex items-center gap-5">
+          {isAuthed && (
+            <Link
+              to="/reviews"
+              style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: location.pathname === '/reviews' ? '#000000' : '#a0a0a0', textDecoration: 'none', transition: 'all 0.15s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#000000' }}
+              onMouseLeave={(e) => { if (location.pathname !== '/reviews') e.currentTarget.style.color = '#a0a0a0' }}
+            >
+              Reviews
+            </Link>
+          )}
           <button
             onClick={() => setShowHelp(true)}
             style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#a0a0a0', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', transition: 'all 0.15s' }}
