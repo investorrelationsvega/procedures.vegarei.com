@@ -85,8 +85,18 @@ function GuideContent() {
         <p>Every SOP comes out uniform: same sections, same tone, same level of detail.</p>
       </Section>
 
-      <Section title="Downloading the Template">
-        <p>The <strong>Vega SOP Generation Template</strong> (.docx) is available in the repository. You can also load it directly into an AI assistant and describe your process. Return the completed SOP to j@vegarei.com or upload it to procedures.vegarei.com.</p>
+      <Section title="Download the Template">
+        <p>Download the Vega SOP Generation Template. Load it into any AI assistant, describe your process, and the AI will produce a complete SOP. Upload the result to procedures.vegarei.com or return it to j@vegarei.com.</p>
+        <a
+          href="/Vega_SOP_Generation_Template.docx"
+          download
+          className="inline-flex items-center gap-2 mt-2 px-4 py-2 border border-[#27474D] text-[#27474D] text-xs font-mono hover:bg-[#27474D] hover:text-white transition-colors"
+        >
+          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 4v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Download Template (.docx)
+        </a>
       </Section>
 
       <Section title="Editing an Existing SOP">
