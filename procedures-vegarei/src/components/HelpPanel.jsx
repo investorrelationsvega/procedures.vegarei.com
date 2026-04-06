@@ -68,25 +68,8 @@ function Section({ title, children }) {
 function GuideContent() {
   return (
     <>
-      <Section title="Creating an SOP">
-        <p>Navigate to a business unit and click <strong>Create SOP</strong>. Fill in the title, category, owner, and other details. Once created, you will enter the editor.</p>
-      </Section>
-
-      <Section title="Writing an SOP with AI">
-        <p>The editor gives you a one-click <strong>Copy Prompt</strong> button. This copies a comprehensive prompt based on the Vega SOP Generation Template. Here is the process:</p>
-        <ol className="list-decimal pl-5 space-y-1">
-          <li>Click <strong>Copy Prompt</strong> in the editor</li>
-          <li>Paste it into your preferred AI (ChatGPT, Gemini, Claude, or any other)</li>
-          <li>Describe your process to the AI in your own words</li>
-          <li>The AI will produce a complete SOP matching Vega's format, tone, and structure</li>
-          <li>Copy the AI's response and paste it back into the editor</li>
-          <li>Click <strong>Done</strong> to review, then <strong>Save and Close</strong></li>
-        </ol>
-        <p>Every SOP comes out uniform: same sections, same tone, same level of detail.</p>
-      </Section>
-
       <Section title="Download the Template">
-        <p>Download the Vega SOP Generation Template. Load it into any AI assistant, describe your process, and the AI will produce a complete SOP. Upload the result to procedures.vegarei.com or return it to j@vegarei.com.</p>
+        <p>Start by downloading the Vega SOP Generation Template. This document contains the master prompt and blank template that any AI assistant can use to produce a complete, correctly formatted SOP.</p>
         <a
           href="/Vega_SOP_Generation_Template.docx"
           download
@@ -99,46 +82,93 @@ function GuideContent() {
         </a>
       </Section>
 
+      <Section title="Creating an SOP">
+        <p>Navigate to a business unit and click <strong>Create SOP</strong>. You only need to provide:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><strong>Category</strong> (the SOP ID auto-generates from your business unit and category)</li>
+          <li><strong>Title</strong></li>
+          <li><strong>Owner</strong></li>
+        </ul>
+        <p>Review cadence defaults to Quarterly. You can also upload a .docx, .html, or .txt file if you already have content prepared.</p>
+      </Section>
+
+      <Section title="Writing an SOP with AI">
+        <p>Once inside the editor, you will see a two-step process:</p>
+        <ol className="list-decimal pl-5 space-y-1">
+          <li>Click <strong>Copy Prompt</strong>. This copies the full Vega SOP Generation Template prompt to your clipboard.</li>
+          <li>Paste it into your preferred AI (ChatGPT, Gemini, Claude, or any other).</li>
+          <li>Describe your process to the AI in your own words. Be as detailed as possible: what happens, who does it, what systems are used, and in what order.</li>
+          <li>The AI will produce a complete SOP matching Vega's format, tone, and structure.</li>
+          <li>Copy the AI's full response and paste it back into the editor.</li>
+          <li>Click <strong>Done</strong> to review the parsed sections, then <strong>Save and Close</strong>.</li>
+        </ol>
+        <p>Every SOP comes out uniform: same sections, same tone, same level of detail. No formatting knowledge needed.</p>
+      </Section>
+
+      <Section title="SOP Template Structure">
+        <p>Every SOP follows this structure:</p>
+        <ol className="list-decimal pl-5 space-y-1">
+          <li><strong>Overview</strong> - Purpose, trigger, successful completion, key systems</li>
+          <li><strong>Procedure Steps</strong> - Numbered steps grouped into phases, each with a Maker or Checker role</li>
+          <li><strong>Completion Checklist</strong> - Items to verify before closing out</li>
+          <li><strong>Key Contacts</strong> - Everyone involved with contact info</li>
+          <li><strong>Exceptions and Edge Cases</strong> - What can go wrong and what to do</li>
+          <li><strong>Review Schedule</strong> - When this SOP is reviewed</li>
+          <li><strong>Revision History</strong> - Change log</li>
+        </ol>
+      </Section>
+
       <Section title="Editing an Existing SOP">
         <p>Open any SOP and click <strong>Edit</strong>. If the SOP already has content, you will see a review of all filled sections. Click <strong>Back to Input</strong> to paste updated content from your AI, then save.</p>
       </Section>
 
       <Section title="Google Drive Sync">
-        <p>All SOPs are stored as Google Docs in your organization's Shared Drive. When you save on the website, changes sync to Drive. The website shows the full formatted template. Google Drive shows the content in a readable format.</p>
-        <p>The website is the best place to create and edit SOPs. Google Drive is useful for quick reading and sharing.</p>
+        <p>All SOPs are stored as Google Docs in your organization's Shared Drive. When you save on the website, changes sync to Drive automatically. The website shows the full formatted template with Vega styling. Google Drive shows the content in a readable plain format.</p>
+        <p>The website is the primary tool for creating and editing SOPs. Google Drive is for reading and sharing.</p>
       </Section>
 
       <Section title="Print and Download">
-        <p><strong>Print</strong> opens your browser's print dialog with a clean, formatted version of the SOP optimized for paper.</p>
+        <p><strong>Print</strong> opens your browser's print dialog with a clean version optimized for paper.</p>
         <p><strong>Download</strong> saves the SOP as an HTML file to your computer.</p>
       </Section>
 
       <Section title="Version History and Revision History">
-        <p><strong>Version History</strong> shows all saved revisions of the file from Google Drive, with dates and who made changes.</p>
-        <p><strong>Revision History</strong> shows the change log tracked inside the SOP document itself (the table at the bottom of every SOP).</p>
+        <p><strong>Version History</strong> shows all saved revisions from Google Drive with dates and who made changes.</p>
+        <p><strong>Revision History</strong> is the change log table inside the SOP document itself (the last section of every SOP).</p>
       </Section>
 
-      <Section title="Publishing">
-        <p>New SOPs are created as <strong>drafts</strong>. Drafts show all template sections (including unfilled ones) so you can see what still needs to be completed.</p>
-        <p>When ready, click <strong>Publish</strong>. Published SOPs hide any sections that were not filled in, showing only completed content for a clean final document.</p>
+      <Section title="Publishing and Drafts">
+        <p>New SOPs are created as <strong>drafts</strong>. Drafts show all template sections so you can see what still needs to be completed.</p>
+        <p>Click <strong>Publish</strong> when ready. Published SOPs hide unfilled sections for a clean final document. You can always edit and fill in more sections later.</p>
+      </Section>
+
+      <Section title="Review Calendar">
+        <p>Click <strong>Reviews</strong> in the navigation bar to see all SOPs and their review status. The dashboard shows:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Summary cards: Total Active, Overdue, Due Soon, On Track</li>
+          <li>Filter by owner (use "My SOPs" to see only yours)</li>
+          <li>Filter by business unit</li>
+          <li>Next review dates for every SOP</li>
+        </ul>
+        <p>To complete a review, open the SOP, verify all content is current, make any updates, then click <strong>Mark Review Complete</strong>.</p>
+      </Section>
+
+      <Section title="Template Updates">
+        <p>The SOP template may be updated over time with new sections or structural changes. When this happens, existing SOPs are not changed automatically.</p>
+        <p>Instead, a blue <strong>Template Updated</strong> banner will appear on any SOP created with an older template. During your next review, click <strong>Update Now</strong> or <strong>Edit</strong> to bring the SOP up to the latest template. Existing content carries over. New sections appear empty for you to fill in.</p>
       </Section>
 
       <Section title="Archiving and Restoring">
-        <p><strong>Archive</strong> moves the SOP and its metadata file into an Archive subfolder within the category folder in Google Drive. The SOP is hidden from the main list but can be restored at any time.</p>
-        <p><strong>Restore</strong> moves the files back to the original category folder and makes the SOP visible again.</p>
+        <p><strong>Archive</strong> moves the SOP and its metadata into an Archive subfolder within the category folder in Google Drive. The SOP is hidden from the main list but not deleted.</p>
+        <p><strong>Restore</strong> moves the files back to the original folder and makes the SOP visible again.</p>
       </Section>
 
       <Section title="Reclassifying">
-        <p>Click <strong>Reclassify</strong> in the action bar to change an SOP's category. Select the new category from the dropdown. The files will be moved to the corresponding folder in Google Drive automatically.</p>
+        <p>Click <strong>Reclassify</strong> in the action bar to change an SOP's category. Select the new category from the dropdown. Files are moved to the new category folder in Google Drive automatically.</p>
       </Section>
 
       <Section title="Discarding a Draft">
         <p>Draft SOPs that have not been published can be permanently deleted by clicking <strong>Discard</strong>. This removes the SOP from the index and deletes the files from Google Drive. This action cannot be undone.</p>
-      </Section>
-
-      <Section title="Review Cycles">
-        <p>Each SOP has a review cadence (Quarterly, Biannually, Annually, or As Needed). When a review is due, a notification banner appears on the SOP page.</p>
-        <p>To complete a review, open the SOP, verify all content is current, make any updates, then click <strong>Mark Review Complete</strong>.</p>
       </Section>
     </>
   )
@@ -176,7 +206,19 @@ function FaqContent() {
     },
     {
       q: 'How does the review cycle work?',
-      a: 'Each SOP has a review cadence set during creation. When a review is due, a banner appears on the SOP page. After reviewing and updating the content, click Mark Review Complete to reset the review timer.',
+      a: 'Each SOP has a review cadence set during creation (default: Quarterly). When a review is due, a banner appears on the SOP page. Use the Reviews page in the navigation to see all upcoming and overdue reviews. After reviewing, click Mark Review Complete.',
+    },
+    {
+      q: 'What happens when the template is updated?',
+      a: 'A blue "Template Updated" banner appears on SOPs created with an older template version. During your next review, click Update Now to bring the SOP up to date. Your existing content is preserved. New sections appear empty for you to fill in.',
+    },
+    {
+      q: 'What file types can I upload?',
+      a: 'You can upload .docx, .html, .htm, .txt, and .md files when creating a new SOP. The content is extracted and saved as the SOP body. For best results, use the Copy Prompt workflow to generate formatted content from your AI.',
+    },
+    {
+      q: 'Where do I find the Review Calendar?',
+      a: 'Click "Reviews" in the top navigation bar. The dashboard shows all active SOPs with their review status, filterable by owner and business unit. Use "My SOPs" to see only the SOPs you own.',
     },
   ]
 
