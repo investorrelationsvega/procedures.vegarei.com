@@ -5,82 +5,89 @@ import { reconstructTemplate } from '../lib/sopTemplate'
 
 const mono = { fontFamily: "'Space Mono', monospace" }
 
-// ── Build the all-in-one prompt ──────────────────────────────
+// ── Prompt matching the Vega_SOP_Generation_Template.docx ────
 
 function buildFullPrompt(sopTitle) {
-  return `I need you to help me write a Standard Operating Procedure (SOP) titled "${sopTitle || 'Untitled'}".
+  return `You are helping me write a Standard Operating Procedure (SOP) for Vega Private Equity LLC, a real estate and private equity firm with eight business lines. I will describe a process and you will produce a complete, formatted SOP using the exact template and rules below.
 
-I will describe the process in my own words below. Please take my description and organize it into the following sections. For each section, write clean, professional content based on what I provide. If I did not include information for a section, skip it.
+SOP Title: "${sopTitle || 'Untitled'}"
 
-SECTIONS TO FILL:
+WRITING RULES - follow these exactly, without exception:
+- Use imperative voice. Write "Navigate to..." not "You should navigate to..."
+- Use present tense throughout.
+- No em dashes anywhere in the document. Use a colon or period instead.
+- One action per step. The action goes on the first line. Supporting detail goes on the second line.
+- Maker executes steps. Checker verifies. Label every step with one or the other.
+- Write for a new operator who has never done this before. Assume nothing. Name every system, every field, every file format.
+- Do not editorialize. Write only what the person doing the work needs to know.
+- Spell out every abbreviation on first use.
 
-1. PURPOSE AND SCOPE
-Write why this SOP exists (1-2 sentences) and what it covers and does not cover.
+STRUCTURE - produce all of the following sections in this order:
 
-2. DEFINITIONS
-List any acronyms, software names, role titles, industry terms, or internal shorthand mentioned. Format as "Term - Definition" with one per line.
+1. OVERVIEW
+Purpose (2 to 4 sentences), trigger, definition of successful completion, key systems table (system / used for / who has access).
 
-3. OVERVIEW
-Summarize the full process, state what triggers it, and list the systems used.
+2. PROCEDURE STEPS
+Numbered steps grouped into phases. Each step has: step number, action, detail (if needed), role (Maker or Checker), and system used.
 
-4. PROCEDURE
-List each step in order. For each step write:
-Step [number]: [Action description] (Maker or Checker)
-- Maker = the person executing the step
-- Checker = the person verifying/reviewing
+3. COMPLETION CHECKLIST
+Every item that must be confirmed before the process is closed. Assign each to Maker or Checker.
 
-5. RISKS AND CONTROLS
-List what could go wrong and what prevents it. Format as:
-Risk: [what could go wrong]
-Control: [what prevents or catches it]
+4. KEY CONTACTS
+Every person or external party involved. Include name, role, and email or contact.
 
-6. ESCALATION PATH
-Who to contact when something goes wrong. Format as:
-[Situation]: [Contact person/role] within [timeframe]
+5. EXCEPTIONS AND EDGE CASES
+Anything that can go wrong and what to do. If none are known, write "None identified at this time."
 
-7. COMPLIANCE REFERENCES
-List any regulations, policies, or legal requirements. If none, write "No specific regulatory requirements. This SOP follows internal best practices."
+6. REVIEW SCHEDULE
+State the review cycle and next review date.
 
-8. COMPLETION CHECKLIST
-List items to verify before the process is done, each marked (Maker) or (Checker).
+TONE - the Vega voice:
+- Direct. Institutional. No filler words. No exclamation points.
+- Every sentence earns its place. If it does not tell the operator what to do or why it matters, cut it.
+- Precision over brevity. If a step needs three lines to be unambiguous, use three lines.
 
-9. KEY CONTACTS
-List everyone involved with their name, email/phone, and role.
+Return each section with its numbered heading exactly as shown above. If missing information, write [PENDING: describe what is needed].
 
-10. APPROVAL
-List who prepared, reviewed, and approved this SOP.
-
-11. REVIEW SCHEDULE
-State how often this SOP should be reviewed (default: quarterly).
-
-WRITING RULES:
-- Write in direct, imperative, present tense ("Navigate to..." not "The user should navigate to...")
-- Professional but readable
-- Do not use em dashes. Use regular dashes or rewrite.
-- Be specific and thorough
-- Keep sentences concise
-
-Return each section with its numbered heading exactly as shown above (e.g. "1. PURPOSE AND SCOPE"). I will paste your response directly into my SOP system.
-
-HERE IS MY DESCRIPTION OF THE PROCESS:
-[DESCRIBE YOUR PROCESS HERE - be as detailed as you can about what happens, who does it, what systems you use, and in what order]`
+Now describe the process you want to document:
+[DESCRIBE YOUR PROCESS HERE]`
 }
 
-// ── Parse AI response into section content ───────────────────
+// ── Section config ───────────────────────────────────────────
 
-const SECTION_MAP = [
-  { pattern: /1\.\s*PURPOSE\s*AND\s*SCOPE/i, id: 'purpose-and-scope', heading: '1. Purpose and Scope' },
-  { pattern: /2\.\s*DEFINITIONS?/i, id: 'definitions', heading: '2. Definitions' },
-  { pattern: /3\.\s*OVERVIEW/i, id: 'overview', heading: '3. Overview' },
-  { pattern: /4\.\s*PROCEDURE/i, id: 'procedure', heading: '4. Procedure' },
-  { pattern: /5\.\s*RISKS?\s*AND\s*CONTROLS?/i, id: 'risks-and-controls', heading: '5. Risks and Controls' },
-  { pattern: /6\.\s*ESCALATION\s*PATH/i, id: 'escalation-path', heading: '6. Escalation Path' },
-  { pattern: /7\.\s*COMPLIANCE\s*REFERENCES?/i, id: 'compliance-references', heading: '7. Compliance References' },
-  { pattern: /8\.\s*COMPLETION\s*CHECKLIST/i, id: 'completion-checklist', heading: '8. Completion Checklist' },
-  { pattern: /9\.\s*KEY\s*CONTACTS?/i, id: 'key-contacts', heading: '9. Key Contacts' },
-  { pattern: /10\.\s*APPROVAL/i, id: 'approval', heading: '10. Approval' },
-  { pattern: /11\.\s*REVIEW\s*SCHEDULE/i, id: 'review-schedule', heading: '11. Review Schedule' },
-]
+const SECTION_HEADINGS = {
+  'overview': '1. Overview',
+  'procedure': '2. Procedure Steps',
+  'completion-checklist': '3. Completion Checklist',
+  'key-contacts': '4. Key Contacts',
+  'exceptions': '5. Exceptions and Edge Cases',
+  'review-schedule': '6. Review Schedule',
+  'revision-history': '7. Revision History',
+}
+
+const ORDERED_SECTIONS = ['overview', 'procedure', 'completion-checklist', 'key-contacts', 'exceptions', 'review-schedule']
+
+// ── Parse AI response into sections ──────────────────────────
+
+function detectSectionId(line) {
+  const l = line.trim()
+  if (/^\d+\.\s*OVERVIEW/i.test(l)) return 'overview'
+  if (/^\d+\.\s*PROCEDURE/i.test(l)) return 'procedure'
+  if (/^\d+\.\s*COMPLETION/i.test(l)) return 'completion-checklist'
+  if (/^\d+\.\s*KEY\s*CONTACT/i.test(l)) return 'key-contacts'
+  if (/^\d+\.\s*EXCEPTION/i.test(l)) return 'exceptions'
+  if (/^\d+\.\s*REVIEW\s*SCHEDULE/i.test(l)) return 'review-schedule'
+  if (/^\d+\.\s*REVISION/i.test(l)) return 'revision-history'
+  // Also match old template headings
+  if (/^\d+\.\s*PURPOSE\s*AND\s*SCOPE/i.test(l)) return 'overview'
+  if (/^\d+\.\s*DEFINITION/i.test(l)) return 'overview'
+  if (/^\d+\.\s*RISK/i.test(l)) return 'exceptions'
+  if (/^\d+\.\s*ESCALATION/i.test(l)) return 'exceptions'
+  if (/^\d+\.\s*COMPLIANCE/i.test(l)) return 'exceptions'
+  if (/^\d+\.\s*APPROVAL/i.test(l)) return 'key-contacts'
+  if (/^\d+\.\s*SOP\s*IDENTIFICATION/i.test(l)) return 'sop-id'
+  return null
+}
 
 function parseAiResponse(text) {
   const sectionContent = {}
@@ -89,29 +96,29 @@ function parseAiResponse(text) {
   let currentLines = []
 
   function flush() {
-    if (currentId && currentLines.length > 0) {
+    if (currentId && currentId !== 'sop-id' && currentLines.length > 0) {
       const content = currentLines.join('\n').trim()
       if (content) {
         const html = content.split(/\n{2,}/).map(p =>
           `<p>${p.trim().replace(/\n/g, '<br>')}</p>`
         ).join('\n')
-        sectionContent[currentId] = html
+        // Append if section already has content (e.g. multiple old sections map to one new section)
+        sectionContent[currentId] = sectionContent[currentId]
+          ? sectionContent[currentId] + '\n' + html
+          : html
       }
     }
     currentLines = []
   }
 
   for (const line of lines) {
-    let matched = false
-    for (const sec of SECTION_MAP) {
-      if (sec.pattern.test(line.trim())) {
-        flush()
-        currentId = sec.id
-        matched = true
-        break
-      }
+    const sid = detectSectionId(line)
+    if (sid) {
+      flush()
+      currentId = sid
+      continue
     }
-    if (!matched && currentId) {
+    if (currentId) {
       currentLines.push(line)
     }
   }
@@ -124,39 +131,34 @@ function parseAiResponse(text) {
 
 function sectionIdFromHeading(text) {
   const n = text.replace(/^\d+\.\s*/, '').trim().toLowerCase()
-  if (n.includes('purpose') && n.includes('scope')) return 'purpose-and-scope'
-  if (n.includes('definition')) return 'definitions'
-  if (n.includes('overview')) return 'overview'
+  if (n.includes('overview') || (n.includes('purpose') && n.includes('scope'))) return 'overview'
   if (n.includes('procedure')) return 'procedure'
-  if (n.includes('risk') && n.includes('control')) return 'risks-and-controls'
-  if (n.includes('escalation')) return 'escalation-path'
-  if (n.includes('compliance')) return 'compliance-references'
   if (n.includes('completion') || n.includes('checklist')) return 'completion-checklist'
   if (n.includes('key contact')) return 'key-contacts'
-  if (n.includes('approval')) return 'approval'
+  if (n.includes('exception') || n.includes('edge case')) return 'exceptions'
+  if (n.includes('risk') && n.includes('control')) return 'exceptions'
+  if (n.includes('escalation')) return 'exceptions'
   if (n.includes('review schedule')) return 'review-schedule'
   if (n.includes('revision history')) return 'revision-history'
+  if (n.includes('definition')) return 'overview'
+  if (n.includes('compliance')) return 'exceptions'
+  if (n.includes('approval')) return 'key-contacts'
   return null
 }
 
 const PLACEHOLDER_PHRASES = [
+  '[AI:',
+  '[PENDING:',
   'State why this SOP exists',
   'Define what this SOP covers',
   'List any terms that someone unfamiliar',
-  'The kinds of terms to include',
   'Provide a brief summary of the end-to-end process',
-  'What event kicks off this process? Be specific',
   'Document each step of the process in the order',
   'Describe the action in one clear sentence',
   'Identify what could go wrong during this process',
-  'Describe who to contact and what to do when something goes wrong',
-  'List any regulations, internal policies, legal requirements',
   'Before closing out this process, confirm every item',
   'This SOP has been reviewed and approved by the following',
   'Phase Title',
-  'Add any supporting detail: where to find something',
-  'Verify the previous step before proceeding',
-  'Describe what to check and what to do if something does not match',
 ]
 
 function isPlaceholderContent(text) {
@@ -207,7 +209,9 @@ function parseExistingContent(html) {
     if (sid === 'revision-history') {
       revisionHtml = contentHtml
     } else if (sid && !isPlaceholderContent(contentText) && contentText.length > 0) {
-      sectionContent[sid] = contentHtml
+      sectionContent[sid] = sectionContent[sid]
+        ? sectionContent[sid] + '\n' + contentHtml
+        : contentHtml
     }
   }
 
@@ -216,12 +220,12 @@ function parseExistingContent(html) {
 
 function reassembleHtml(preamble, sectionContent, revisionHtml) {
   let body = ''
-  for (const sec of SECTION_MAP) {
-    if (sectionContent[sec.id]) {
-      body += `<h2>${sec.heading}</h2>\n${sectionContent[sec.id]}\n\n`
+  for (const id of ORDERED_SECTIONS) {
+    if (sectionContent[id]) {
+      body += `<h2>${SECTION_HEADINGS[id]}</h2>\n${sectionContent[id]}\n\n`
     }
   }
-  body += `<h2>12. Revision History</h2>\n${revisionHtml || '<table class="rev-table"><thead><tr><th style="width:65px;">Version</th><th style="width:110px;">Date</th><th style="width:130px;">Author</th><th>Changes</th></tr></thead><tbody><tr><td>1.0</td><td></td><td></td><td>Initial publication</td></tr></tbody></table>'}\n`
+  body += `<h2>7. Revision History</h2>\n${revisionHtml || '<table class="rev-table"><thead><tr><th style="width:65px;">Version</th><th style="width:110px;">Date</th><th style="width:130px;">Author</th><th>Changes</th></tr></thead><tbody><tr><td>1.0</td><td></td><td></td><td>Initial publication</td></tr></tbody></table>'}\n`
   return `${preamble}\n<div class="doc-body">\n${body}</div>`
 }
 
@@ -266,7 +270,6 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
         setSectionContent(existing.sectionContent)
         setRevisionHtml(existing.revisionHtml)
 
-        // If there is existing content, show it as pre-parsed
         if (Object.keys(existing.sectionContent).length > 0) {
           setParsed(true)
         }
@@ -291,7 +294,6 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
     if (!userInput.trim()) return
     const sections = parseAiResponse(userInput)
     if (Object.keys(sections).length === 0) {
-      // If parsing found no sections, treat the whole input as the overview
       const html = userInput.trim().split(/\n{2,}/).map(p =>
         `<p>${p.trim().replace(/\n/g, '<br>')}</p>`
       ).join('\n')
@@ -325,8 +327,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
     onClose()
   }, [userInput, sectionContent, onClose])
 
-  const filledSections = Object.keys(sectionContent)
-  const filledCount = filledSections.length
+  const filledCount = Object.keys(sectionContent).filter(k => ORDERED_SECTIONS.includes(k)).length
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
@@ -373,20 +374,19 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
             <span style={mono} className="text-xs text-[#797469] uppercase tracking-wider">Loading...</span>
           </div>
         ) : !parsed ? (
-          /* ── Input view ──────────────────────────────── */
+          /* ── Input view ── */
           <div className="max-w-2xl mx-auto px-8 py-12">
             <h2 className="text-xl font-bold text-[#111] mb-2">Describe your process</h2>
-            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+            <p className="text-sm text-gray-600 mb-8 leading-relaxed">
               Copy the prompt below and paste it into your preferred AI (ChatGPT, Gemini, Claude, or any other).
-              Add your description of the process, then copy the AI's response and paste it back here.
+              Describe your process to the AI, then copy its response and paste it here.
               The system will organize it into the SOP template automatically.
             </p>
 
-            {/* Step 1: Copy prompt */}
-            <div className="flex items-center gap-3 mb-6">
+            {/* Step 1 */}
+            <div className="flex items-center gap-3 mb-8">
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-[#27474D] text-white text-xs font-bold flex-shrink-0">1</div>
-              <span className="text-sm text-[#111] font-medium">Copy the prompt and paste it into your AI</span>
-              <div className="flex-1" />
+              <span className="text-sm text-[#111] font-medium flex-1">Copy the prompt and paste it into your AI</span>
               <button
                 onClick={handleCopyPrompt}
                 className="text-xs font-mono px-4 py-2 border border-[#27474D] text-[#27474D] hover:bg-[#27474D] hover:text-white transition-colors"
@@ -395,10 +395,10 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
               </button>
             </div>
 
-            {/* Step 2: Describe process */}
+            {/* Step 2 */}
             <div className="flex items-start gap-3 mb-4">
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-[#27474D] text-white text-xs font-bold flex-shrink-0 mt-0.5">2</div>
-              <span className="text-sm text-[#111] font-medium">Describe your process to the AI, then paste its response here</span>
+              <span className="text-sm text-[#111] font-medium">Paste the AI's response here</span>
             </div>
 
             <textarea
@@ -426,7 +426,7 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
             </div>
           </div>
         ) : (
-          /* ── Review view ──────────────────────────────── */
+          /* ── Review view ── */
           <div className="max-w-3xl mx-auto px-8 py-12">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -443,16 +443,15 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
               </button>
             </div>
 
-            {/* Show filled sections */}
             <div className="sop-document">
               <div dangerouslySetInnerHTML={{ __html: preamble }} className="mb-6 opacity-60" />
               <div className="doc-body">
-                {SECTION_MAP.map(sec => {
-                  const content = sectionContent[sec.id]
+                {ORDERED_SECTIONS.map(id => {
+                  const content = sectionContent[id]
                   if (!content) return null
                   return (
-                    <div key={sec.id} className="mb-6">
-                      <h2>{sec.heading}</h2>
+                    <div key={id} className="mb-6">
+                      <h2>{SECTION_HEADINGS[id]}</h2>
                       <div dangerouslySetInnerHTML={{ __html: content }} />
                     </div>
                   )
@@ -460,18 +459,17 @@ export default function SOPEditor({ docId, title, accessToken, onClose }) {
               </div>
             </div>
 
-            {/* Empty sections note */}
-            {filledCount < SECTION_MAP.length && (
+            {filledCount < ORDERED_SECTIONS.length && (
               <div className="mt-6 bg-gray-50 border border-gray-200 rounded px-4 py-3">
                 <div style={mono} className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">
                   Sections not yet filled
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {SECTION_MAP.filter(s => !sectionContent[s.id]).map(s => (
-                    <span key={s.id} className="text-xs text-gray-400 font-mono">{s.heading}</span>
+                  {ORDERED_SECTIONS.filter(id => !sectionContent[id]).map(id => (
+                    <span key={id} className="text-xs text-gray-400 font-mono">{SECTION_HEADINGS[id]}</span>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 mt-2">You can come back and fill these in later by editing the SOP.</p>
+                <p className="text-xs text-gray-400 mt-2">You can fill these in later by editing the SOP again.</p>
               </div>
             )}
 

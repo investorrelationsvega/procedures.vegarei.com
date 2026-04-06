@@ -69,29 +69,32 @@ function GuideContent() {
   return (
     <>
       <Section title="Creating an SOP">
-        <p>Navigate to a business unit and click <strong>Create SOP</strong>. Fill in the title, category, owner, and other details. Once created, you will enter the guided editor.</p>
-        <p>The editor walks you through each section of the SOP one at a time. For each section you will see:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>A question explaining what to write</li>
-          <li>A detailed explanation of the section</li>
-          <li>An example of what good content looks like</li>
-          <li>A text box where you type or paste your content</li>
-        </ul>
-        <p>Fill in what you can. Use <strong>Skip</strong> to move past sections you are not ready to complete. You can always come back to them later.</p>
+        <p>Navigate to a business unit and click <strong>Create SOP</strong>. Fill in the title, category, owner, and other details. Once created, you will enter the editor.</p>
       </Section>
 
-      <Section title="Using the AI Prompt Helper">
-        <p>Each section has a <strong>Copy Prompt</strong> button. This generates a ready-to-use prompt you can paste into any AI tool (ChatGPT, Gemini, Claude, or any other).</p>
-        <p>The prompt includes the SOP title, section context, writing tone rules, and a place for your rough notes. Paste it into your AI, add your notes, copy the polished response, and paste it back into the editor.</p>
+      <Section title="Writing an SOP with AI">
+        <p>The editor gives you a one-click <strong>Copy Prompt</strong> button. This copies a comprehensive prompt based on the Vega SOP Generation Template. Here is the process:</p>
+        <ol className="list-decimal pl-5 space-y-1">
+          <li>Click <strong>Copy Prompt</strong> in the editor</li>
+          <li>Paste it into your preferred AI (ChatGPT, Gemini, Claude, or any other)</li>
+          <li>Describe your process to the AI in your own words</li>
+          <li>The AI will produce a complete SOP matching Vega's format, tone, and structure</li>
+          <li>Copy the AI's response and paste it back into the editor</li>
+          <li>Click <strong>Done</strong> to review, then <strong>Save and Close</strong></li>
+        </ol>
+        <p>Every SOP comes out uniform: same sections, same tone, same level of detail.</p>
+      </Section>
+
+      <Section title="Downloading the Template">
+        <p>The <strong>Vega SOP Generation Template</strong> (.docx) is available in the repository. You can also load it directly into an AI assistant and describe your process. Return the completed SOP to j@vegarei.com or upload it to procedures.vegarei.com.</p>
       </Section>
 
       <Section title="Editing an Existing SOP">
-        <p>Open any SOP and click <strong>Edit</strong> in the action bar. The guided editor will load your existing content into each section. Sections you have already filled in will show your current text. Empty sections will be ready for input.</p>
-        <p>Progress dots at the top show which sections are filled (green), empty (gray), or currently active (dark).</p>
+        <p>Open any SOP and click <strong>Edit</strong>. If the SOP already has content, you will see a review of all filled sections. Click <strong>Back to Input</strong> to paste updated content from your AI, then save.</p>
       </Section>
 
       <Section title="Google Drive Sync">
-        <p>All SOPs are stored as Google Docs in your organization's Shared Drive. When you save on the website, changes sync to Drive. When someone reads the SOP in Google Drive, they see the content (though without the website's visual formatting).</p>
+        <p>All SOPs are stored as Google Docs in your organization's Shared Drive. When you save on the website, changes sync to Drive. The website shows the full formatted template. Google Drive shows the content in a readable format.</p>
         <p>The website is the best place to create and edit SOPs. Google Drive is useful for quick reading and sharing.</p>
       </Section>
 
@@ -155,7 +158,7 @@ function FaqContent() {
     },
     {
       q: 'What does the Copy Prompt button do?',
-      a: 'It copies a pre-written prompt to your clipboard that you can paste into any AI tool (ChatGPT, Gemini, Claude, etc.). The prompt includes the section context, writing rules, and a place for your rough notes. The AI will polish your notes into clean SOP content that you can paste back into the editor.',
+      a: 'It copies the full Vega SOP Generation Template prompt to your clipboard. Paste it into any AI (ChatGPT, Gemini, Claude), describe your process, and the AI produces a complete SOP in the correct format. Copy the AI response back into the editor and click Done.',
     },
     {
       q: 'Why do some sections not appear on the published SOP?',
