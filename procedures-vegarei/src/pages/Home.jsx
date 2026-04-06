@@ -15,38 +15,40 @@ const COMPANIES = [
   { slug: 'private-equity',        num: '06', label: 'Private Equity',             desc: 'Sales & Fund Administration' },
   { slug: 'property-management',   num: '07', label: 'Property Management & Real Estate', desc: 'Operations & Holdings' },
   { slug: 'valuations',            num: '08', label: 'Valuations',                 desc: 'Appraisal & Advisory' },
-  { slug: 'employee-handbook',     num: '09', label: 'Employee Handbook',             desc: 'Policies & Guidelines' },
+  { slug: 'employee-handbook',     num: '09', label: 'Employee Handbook',             desc: 'Policies & Guidelines', comingSoon: true },
 ]
 
 function CompanyCard({ company, onClick }) {
+  const isComingSoon = company.comingSoon
   return (
     <div
-      onClick={onClick}
+      onClick={isComingSoon ? undefined : onClick}
       style={{
         border: '1px solid rgba(0,0,0,0.12)',
         borderRadius: 6,
         padding: '20px 22px',
-        background: '#ffffff',
-        cursor: 'pointer',
+        background: isComingSoon ? '#fafafa' : '#ffffff',
+        cursor: isComingSoon ? 'default' : 'pointer',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         minHeight: 140,
         transition: 'all 0.15s',
+        opacity: isComingSoon ? 0.6 : 1,
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#27474D'; e.currentTarget.style.background = 'rgba(39,71,77,0.03)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)'; e.currentTarget.style.background = '#ffffff' }}
+      onMouseEnter={(e) => { if (!isComingSoon) { e.currentTarget.style.borderColor = '#27474D'; e.currentTarget.style.background = 'rgba(39,71,77,0.03)' } }}
+      onMouseLeave={(e) => { if (!isComingSoon) { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)'; e.currentTarget.style.background = '#ffffff' } }}
     >
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#27474D', display: 'inline-block' }} />
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: isComingSoon ? '#a0a0a0' : '#27474D', display: 'inline-block' }} />
           <span style={{ ...mono, fontSize: 10, color: '#707070', letterSpacing: '0.05em' }}>{company.num}</span>
         </div>
-        <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: '#000000', marginBottom: 4 }}>{company.label}</div>
+        <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: isComingSoon ? '#a0a0a0' : '#000000', marginBottom: 4 }}>{company.label}</div>
         <div style={{ ...mono, fontSize: 11, color: '#707070' }}>{company.desc}</div>
       </div>
-      <div style={{ ...mono, fontSize: 11, color: '#27474D', marginTop: 16 }}>
-        Enter &rarr;
+      <div style={{ ...mono, fontSize: 11, color: isComingSoon ? '#a0a0a0' : '#27474D', marginTop: 16 }}>
+        {isComingSoon ? 'Coming Soon' : 'Enter \u2192'}
       </div>
     </div>
   )
