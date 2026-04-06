@@ -127,7 +127,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
             <input
               ref={fileInputRef}
               type="file"
-              accept=".html,.htm,.txt,.md"
+              accept=".html,.htm,.txt,.md,.docx"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -142,10 +142,10 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                   <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <p className="text-xs font-mono text-[#797469] group-hover:text-black transition-colors">
-                  Upload an HTML or text file
+                  Upload a file
                 </p>
                 <p className="text-[10px] font-mono text-gray-400">
-                  .html, .txt, .md — or leave blank for a template
+                  .docx, .html, .txt, .md
                 </p>
               </button>
             ) : (
