@@ -127,7 +127,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
             <input
               ref={fileInputRef}
               type="file"
-              accept=".html,.htm,.txt,.md,.docx"
+              accept=".html,.htm,.txt,.md,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -150,14 +150,41 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
               </button>
             ) : (
               <div className="space-y-3">
-                <div className="bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
+                <div className={`border px-4 py-3 flex items-center justify-between ${
+                  uploadError
+                    ? 'bg-red-50 border-red-200'
+                    : parsing
+                      ? 'bg-gray-50 border-gray-200'
+                      : uploadedText
+                        ? 'bg-green-50 border-green-300'
+                        : 'bg-gray-50 border-gray-200'
+                }`}>
                   <div className="flex items-center gap-3">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#27474D]" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    {parsing ? (
+                      <span className="w-5 h-5 border-2 border-gray-300 border-t-black rounded-full animate-spin flex-shrink-0" />
+                    ) : uploadError ? (
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" strokeLinecap="round" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" strokeLinecap="round" />
+                      </svg>
+                    ) : uploadedText ? (
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#27474D] flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
                     <div>
                       <p className="text-xs font-mono text-black">{uploadedFile.name}</p>
-                      <p className="text-[10px] text-[#797469]">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
+                      <p className="text-[10px] text-[#797469]">
+                        {(uploadedFile.size / 1024).toFixed(1)} KB
+                        {parsing && ' \u00b7 Parsing...'}
+                        {!parsing && uploadedText && ` \u00b7 Uploaded successfully (${uploadedText.length.toLocaleString()} characters)`}
+                        {uploadError && ' \u00b7 Failed'}
+                      </p>
                     </div>
                   </div>
                   <button
@@ -167,18 +194,11 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                       setUploadError('')
                       if (fileInputRef.current) fileInputRef.current.value = ''
                     }}
-                    className="text-[10px] font-mono text-[#797469] hover:text-black transition-colors px-2 py-1 border border-gray-200 hover:border-black"
+                    className="text-[10px] font-mono text-[#797469] hover:text-black transition-colors px-2 py-1 border border-gray-200 hover:border-black bg-white"
                   >
                     Remove
                   </button>
                 </div>
-
-                {parsing && (
-                  <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200">
-                    <span className="w-3 h-3 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
-                    <span className="text-xs text-[#797469]">Parsing document...</span>
-                  </div>
-                )}
 
                 {uploadError && (
                   <div className="bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700">
@@ -195,7 +215,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
                       />
                     ) : (
                       <pre className="text-[11px] text-[#566F69] whitespace-pre-wrap font-mono leading-relaxed">
-                        {uploadedText.slice(0, 1500)}{uploadedText.length > 1500 ? '\n…' : ''}
+                        {uploadedText.slice(0, 1500)}{uploadedText.length > 1500 ? '\n\u2026' : ''}
                       </pre>
                     )}
                   </div>
