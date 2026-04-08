@@ -105,7 +105,7 @@ export default function CreateSopDialog({ company, existingSops, onSave, onCance
       owner: owner.trim(),
       company,
       reviewCadence,
-      description: '',
+      description: !isHtml && uploadedText ? uploadedText.trim() : '',
       useAi: false,
       uploadedHtml: isHtml ? uploadedText.trim() : '',
     })

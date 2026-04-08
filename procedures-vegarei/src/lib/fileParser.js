@@ -27,16 +27,82 @@ export async function parseUploadedFile(file) {
   throw new Error(`Unsupported file type: .${ext}. Supported: .docx, .html, .txt, .md`)
 }
 
-// Parse .docx (Office Open XML) by extracting text from the zip
+// ── Parse .docx (Office Open XML) ───────────────────────────
+// .docx is a zip archive. We read the central directory to find
+// word/document.xml, decompress it, and extract text from the XML.
+
 async function parseDocx(file) {
-  const arrayBuffer = await file.arrayBuffer()
-  const uint8 = new Uint8Array(arrayBuffer)
+  const buffer = await file.arrayBuffer()
+  const data = new Uint8Array(buffer)
+  const view = new DataView(buffer)
 
-  // .docx is a zip file - find and extract word/document.xml
-  const xmlContent = extractFileFromZip(uint8, 'word/document.xml')
-  if (!xmlContent) throw new Error('Could not read .docx file. The file may be corrupted.')
+  // Find End of Central Directory Record (EOCD)
+  // Signature: PK\x05\x06
+  let eocdOffset = -1
+  for (let i = data.length - 22; i >= Math.max(0, data.length - 65557); i--) {
+    if (data[i] === 0x50 && data[i + 1] === 0x4b && data[i + 2] === 0x05 && data[i + 3] === 0x06) {
+      eocdOffset = i
+      break
+    }
+  }
+  if (eocdOffset === -1) throw new Error('Invalid .docx file (no EOCD found)')
 
-  // Parse the XML and extract text content
+  const totalEntries = view.getUint16(eocdOffset + 10, true)
+  const cdSize = view.getUint32(eocdOffset + 12, true)
+  const cdOffset = view.getUint32(eocdOffset + 16, true)
+
+  // Walk the central directory looking for word/document.xml
+  let entryOffset = cdOffset
+  let xmlContent = null
+
+  for (let i = 0; i < totalEntries; i++) {
+    // Central Directory Header signature: PK\x01\x02
+    if (data[entryOffset] !== 0x50 || data[entryOffset + 1] !== 0x4b ||
+        data[entryOffset + 2] !== 0x01 || data[entryOffset + 3] !== 0x02) {
+      throw new Error('Invalid .docx file (bad central directory entry)')
+    }
+
+    const compMethod = view.getUint16(entryOffset + 10, true)
+    const compSize = view.getUint32(entryOffset + 20, true)
+    const uncompSize = view.getUint32(entryOffset + 24, true)
+    const nameLen = view.getUint16(entryOffset + 28, true)
+    const extraLen = view.getUint16(entryOffset + 30, true)
+    const commentLen = view.getUint16(entryOffset + 32, true)
+    const localHeaderOffset = view.getUint32(entryOffset + 42, true)
+
+    const nameBytes = data.slice(entryOffset + 46, entryOffset + 46 + nameLen)
+    const fileName = new TextDecoder().decode(nameBytes)
+
+    if (fileName === 'word/document.xml') {
+      // Read local file header to get its name and extra field lengths
+      // Local header signature: PK\x03\x04
+      if (data[localHeaderOffset] !== 0x50 || data[localHeaderOffset + 1] !== 0x4b ||
+          data[localHeaderOffset + 2] !== 0x03 || data[localHeaderOffset + 3] !== 0x04) {
+        throw new Error('Invalid .docx file (bad local file header)')
+      }
+      const localNameLen = view.getUint16(localHeaderOffset + 26, true)
+      const localExtraLen = view.getUint16(localHeaderOffset + 28, true)
+      const dataStart = localHeaderOffset + 30 + localNameLen + localExtraLen
+      const compressed = data.slice(dataStart, dataStart + compSize)
+
+      if (compMethod === 0) {
+        // Stored
+        xmlContent = new TextDecoder().decode(compressed)
+      } else if (compMethod === 8) {
+        // Deflate
+        xmlContent = await decompressDeflate(compressed)
+      } else {
+        throw new Error(`Unsupported compression method: ${compMethod}`)
+      }
+      break
+    }
+
+    entryOffset += 46 + nameLen + extraLen + commentLen
+  }
+
+  if (!xmlContent) throw new Error('Could not find word/document.xml in the .docx file')
+
+  // Parse the XML and extract text from <w:t> elements, with paragraph breaks
   const parser = new DOMParser()
   const doc = parser.parseFromString(xmlContent, 'application/xml')
 
@@ -44,64 +110,22 @@ async function parseDocx(file) {
   const paragraphs = doc.getElementsByTagNameNS(ns, 'p')
   const lines = []
 
-  for (const p of paragraphs) {
-    const texts = []
-    const runs = p.getElementsByTagNameNS(ns, 'r')
-    for (const r of runs) {
-      const tElements = r.getElementsByTagNameNS(ns, 't')
-      for (const t of tElements) {
-        if (t.textContent) texts.push(t.textContent)
-      }
+  for (let i = 0; i < paragraphs.length; i++) {
+    const p = paragraphs[i]
+    const textNodes = p.getElementsByTagNameNS(ns, 't')
+    let line = ''
+    for (let j = 0; j < textNodes.length; j++) {
+      line += textNodes[j].textContent || ''
     }
-    const line = texts.join('')
     lines.push(line)
   }
 
-  const result = lines.join('\n').trim()
+  const result = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
   if (!result) throw new Error('The .docx file appears to be empty.')
   return result
 }
 
-// Minimal zip extraction - finds a file by name in a zip archive
-function extractFileFromZip(data, targetName) {
-  // Find local file headers (PK\x03\x04)
-  let offset = 0
-  while (offset < data.length - 4) {
-    if (data[offset] === 0x50 && data[offset + 1] === 0x4B &&
-        data[offset + 2] === 0x03 && data[offset + 3] === 0x04) {
-
-      const nameLen = data[offset + 26] | (data[offset + 27] << 8)
-      const extraLen = data[offset + 28] | (data[offset + 29] << 8)
-      const compMethod = data[offset + 8] | (data[offset + 9] << 8)
-      const compSize = data[offset + 18] | (data[offset + 19] << 8) |
-                       (data[offset + 20] << 16) | (data[offset + 21] << 24)
-
-      const nameBytes = data.slice(offset + 30, offset + 30 + nameLen)
-      const fileName = new TextDecoder().decode(nameBytes)
-
-      const dataStart = offset + 30 + nameLen + extraLen
-
-      if (fileName === targetName) {
-        if (compMethod === 0) {
-          // Stored (no compression)
-          const fileData = data.slice(dataStart, dataStart + compSize)
-          return new TextDecoder().decode(fileData)
-        } else if (compMethod === 8) {
-          // Deflated - use DecompressionStream
-          const compressed = data.slice(dataStart, dataStart + compSize)
-          return decompressDeflate(compressed)
-        }
-      }
-
-      offset = dataStart + compSize
-    } else {
-      offset++
-    }
-  }
-  return null
-}
-
-// Decompress deflate data using the browser's DecompressionStream API
+// Decompress deflate-raw data using the browser's DecompressionStream API
 async function decompressDeflate(compressed) {
   const stream = new Blob([compressed]).stream().pipeThrough(
     new DecompressionStream('deflate-raw')
